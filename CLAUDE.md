@@ -8,8 +8,8 @@
 - 디자인·캐릭터·대사 방식은 LOA 튀르크(fishilyfishyfish/LOA_turk)를 기준으로 한다. **페노피 = 튀르크, 이름만 다름.**
 - 엔진은 각 게임의 원래 레포에서 가져온 것을 **고치지 않는다.** 이 레포에서는 워커로 감싸기만 한다.
   원래 레포(LOA_turk, amazons-hippolyta, backgammon-palamedes)는 건드리지 않는다.
-  예외: 브레이크스루와 국제 드래프트는 원래 레포가 없어서 엔진을 이 레포(`breakthrough/engine.js`, `draughts/engine.js`)에서
-  새로 만들었다(사용자 요청). 이 둘은 고쳐도 된다.
+  예외: 브레이크스루, 국제 드래프트, 체스는 원래 레포가 없어서 엔진을 이 레포(`breakthrough/engine.js`, `draughts/engine.js`,
+  `chess/engine.js`)에서 새로 만들었다(사용자 요청). 이 셋은 고쳐도 된다.
 - 사이트는 빌드 도구 없이 바닐라 JS + ES 모듈. WASM만 빌드한다(CI가 함).
 - 대국 화면에는 판, 선후공(또는 색) 고르기, 오른쪽 위 "규칙" 버튼만 둔다. 게임 진행에 꼭 필요한 버튼(아마존 취소, 백개먼
   굴리기·더블·턴 끝내기)은 판 아래 한 줄(`#tray`)에만 둔다. 다른 게임으로 가는 길은 규칙 시트 맨 아래 "다른 게임".
@@ -35,25 +35,28 @@ shared/
   record.js            게임별 전적(localStorage `penopi.<id>.record`), 마지막 방문
   sketch.js            손그림 격자, 연필 궤적, 지우개, 말 뛰기
   offline.js           서비스 워커 등록
-loa/ amazons/ backgammon/ breakthrough/ draughts/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
+loa/ amazons/ backgammon/ breakthrough/ draughts/ chess/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
   loa/engine.js              LOA_turk engine.js 그대로 (fb07518)
   amazons/engine/            amazons-hippolyta engine/ 그대로 (1e742b6, tests/book.rs만 뺌: web/book.json을 읽어서)
   backgammon/engine/         backgammon-palamedes engine/ 그대로 (06492c2), backgammon/rust-toolchain.toml도
   breakthrough/engine.js     이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "브레이크스루 엔진"
   draughts/engine.js         이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "국제 드래프트 엔진"
+  chess/engine.js            이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "체스 엔진"
   */pkg/                     WASM 빌드 산출물(커밋 안 함)
 tools/
   build-wasm.sh        두 엔진 WASM 빌드
   check-lines.py       화면에 나오는 한글이 전부 폰트 안에 있는지
-  smoke.mjs            Chromium으로 로비 + 세 게임을 실제로 두어 봄(오류, 응답 시간)
+  smoke.mjs            Chromium으로 로비 + 모든 게임을 실제로 두어 봄(오류, 응답 시간)
   verify-engines.mjs   원래 레포 엔진과 같은 수·같은 평가가 나오는지
   test-breakthrough.mjs  브레이크스루 엔진 테스트(CI): 단순 구현과 수 생성 비교, 강제승 탐색 vs 단순 탐색기, 무작위·탐욕 상대 전승
   arena-breakthrough.mjs 브레이크스루 엔진끼리 자동 대국(평가 가중치 튜닝용)
   test-draughts.mjs    국제 드래프트 엔진 테스트(CI): 공개된 perft 값, 단순 구현과 수 생성 비교, 잡기 규칙 손 국면, 무작위 상대 전승
   arena-draughts.mjs   국제 드래프트 엔진끼리 자동 대국
+  test-chess.mjs       체스 엔진 테스트(CI): 표준 perft 5국면, 규칙·무승부·기보 표기, 메이트 찾기, 무작위 상대 전승
+  arena-chess.mjs      체스 엔진끼리 자동 대국
   bubble-test.html     수에 대한 대사가 제때 지워지는지(스모크 테스트가 돌림)
   assemble.py          배포할 _site 만들기 + precache.json
-.github/workflows/pages.yml   엔진 테스트 → 대사 글자 검사 → WASM 빌드 → 브레이크스루·드래프트 테스트 → 스모크 → _site 배포
+.github/workflows/pages.yml   엔진 테스트 → 대사 글자 검사 → WASM 빌드 → 브레이크스루·드래프트·체스 테스트 → 스모크 → _site 배포
 ```
 
 ## 게임 추가하기
@@ -76,7 +79,7 @@ tools/
   - 게임이 `verdict`를 주면 swing 대신 그것을 쓴다(백개먼: 주사위 운 때문에 승률 변화로는 실수를 못 가려서 엔진 2수 분석의 손실 ≥ 0.08로 판정).
   - 그다음 게임 사건(`facts`), p > 85% 처음 → `winning`, p < 20% 처음 → `losing`, 그 외 가끔 `normal`/`normalNodes`/잡담.
 - 승률 p: LOA는 sigmoid(점수/300)(튀르크와 같음), 아마존은 MCTS 루트 값 (v+1)/2, 백개먼은 엔진이 고른 수의 결과 승률,
-  브레이크스루·국제 드래프트는 sigmoid(점수/200)(말 하나 = 100).
+  브레이크스루·국제 드래프트는 sigmoid(점수/200)(말 하나 = 100), 체스는 sigmoid(점수/300)(폰 하나 = 100).
 - 내 수 뒤(`humanMoved`): 게임 사건 → 1.5초 안에 두면 `fast`(30%) → 긴 판 `longGame`.
 - **수에 대한 대사는 다음다음 차례가 시작되면 지운다**(사용자 요청). 내 수에 대한 말은 내 다음 차례가 시작될 때, 페노피 수에 대한 말은
   페노피의 다음 차례가 시작될 때 말풍선을 비운다. 그 사이에 새 말을 안 했으면 지난 수 얘기("못 들어오네")가 새 차례 얘기처럼 읽히기 때문.
@@ -87,8 +90,9 @@ tools/
 - 내 차례 15초 → 잡담(60%), 40초 → `slow` + 판 위 왕복. 1분 아무 일 없으면 졸기.
 - 끝: 이기면 `engineWin`(게임이 `key`로 더 구체적인 줄을 먼저 시도: 개먼, 포기 등) + 폴짝, 3.5초 뒤 `engineWin2`/`streakBroken`.
   지면 `humanWin`(첫 패배면 `humanWinFirst`) + 가라앉기, 3.5초 뒤 `humanWin2`.
-- 게임 전용 대사 수: LOA 42줄(튀르크에서 옮긴 잡기·두 덩어리·무승부·패스 등 + 새 줄), 아마존 36줄, 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄(잡담 제외).
-  공통 잡담 14주제 + 게임 잡담(chatLoa, chatAmazons, chatBackgammon, chatBreakthrough, chatDraughts).
+- 게임 전용 대사 수: LOA 42줄(튀르크에서 옮긴 잡기·두 덩어리·무승부·패스 등 + 새 줄), 아마존 36줄, 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄(잡담 제외).
+  공통 잡담 14주제 + 게임 잡담(chatLoa, chatAmazons, chatBackgammon, chatBreakthrough, chatDraughts, chatChess).
+  체스에서는 튀르크(체스 자동인형) 얘기가 다시 나온다("1770년부터 체스 뒀어", 켐펠렌, 나폴레옹).
 - 대사·규칙에 쓰는 한글은 Gaegu 서브셋(KS X 1001 2,350자) 안에서만. `python3 tools/check-lines.py`로 확인(CI도 함).
 - 튀르크 대사 중 LOA 얘기(잇기, 덩어리, 커넥트메이트, LOA 잡학)는 `loa/lines.js`로 옮겼고, "1770년"(기계 튀르크)처럼 이름이 바뀌어
   어색해진 줄과 "5초"(생각 시간이 바뀜)는 고쳤다. 다시 보기 대사는 뺐다.
@@ -101,6 +105,7 @@ tools/
 | 아마존 | amazons-hippolyta Rust → WASM, MCTS | module worker, 요청마다 수순 전체를 보내는 무상태 방식. 워커 여러 개(남는 코어, 최대 4)로 루트 병렬 탐색 후 통계 합침(원래 페이지 `combineInfos` 그대로) | 2초(원래 5단계와 같음). 탐색 루프가 JS에서 시간 확인 |
 | 브레이크스루 | 이 레포에서 새로 만듦(`breakthrough/engine.js`, 순수 JS) | LOA와 같은 방식: classic worker + 페이지에도 엔진 하나(규칙 판단) | 2.5초, 반복 심화. 6.5초 넘으면 워커를 죽이고 페이지에서 0.6초. 미리 생각(ponder)은 안 함 |
 | 국제 드래프트 | 이 레포에서 새로 만듦(`draughts/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. ponder 없음 |
+| 체스 | 이 레포에서 새로 만듦(`chess/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. ponder 없음 |
 | 백개먼 | backgammon-palamedes Rust → WASM(신경망 포함) | module worker, 원래 `engine-worker.js`처럼 함수 이름 + 인자 RPC | 팔라메데스 봇(3수 탐색, WASM 평균 0.4초). 4초 넘으면 워커를 죽이고 2수(`rank_moves_json` 1위)로 |
 
 - 백개먼은 머니 게임 + 더블링 큐브(매치 없음). 페노피의 큐브 판단은 원래 사이트의 팔라메데스 봇(`ai_cube_json`). 개먼 2배, 백개먼 3배, × 큐브.
@@ -150,6 +155,24 @@ tools/
 - 화면: 말을 누르고 끝 칸(빨간 점)을 누른다. 잡아야 하면 상태 줄에 "잡아야 해", 잡을 수 있는 말에 빨간 점선. 말을 고르면 잡힐 말에
   점선 동그라미. 다른 길로 같은 칸에 가는 잡기가 여럿이면 그 칸을 눌렀을 때 "거쳐 갈 칸을 눌러"라고 하고 다음 내릴 칸(작은 원)을 보여 준다.
   사람이 흑이면 판을 180° 돌린다.
+
+## 체스 엔진 (2026-11-12, 사용자 요청으로 새로 만듦)
+
+- 규칙 전부: 캐슬링(체크 중·지나가는 칸 공격받으면 불가), 앙파상, 네 가지 승진, 체크메이트·스테일메이트,
+  무승부(50수, 3회 반복, 메이트 불가능한 기물: K vs K, K+경기물 vs K, 같은 색 칸 비숍 하나씩).
+- 표현: 0x88 `Int8Array(128)`, 기물 = 색(0/8) | 종류(1 폰 … 6 킹). 수 = from | to<<7 | 승진<<14 | 플래그<<17. FEN 읽기·쓰기, SAN 표기.
+- 탐색: 네가맥스 알파베타(PVS), 반복 심화, 치환표, 널 무브(폰 끝내기 제외), LMR, 체크 연장, 킬러·히스토리, MVV-LVA,
+  정지 탐색(잡기·승진, 델타 가지치기). 수순 안의 반복·50수·기물 부족은 무승부로 본다.
+- 평가: 기물 값과 칸 점수표를 중반/종반으로 섞음(국면 = 경기물 1, 룩 2, 퀸 4, 최대 24), 비숍 쌍 30, 겹폰 −12, 고립폰 −12,
+  통과한 폰(랭크별 보너스, 종반에 크게), 열린 줄 룩 18 / 반만 열린 줄 9, 차례 10. 칸 점수표는 직접 쓴 값(흔한 원칙: 가운데 나이트,
+  캐슬링한 킹, 종반엔 가운데 킹).
+- 테스트(`tools/test-chess.mjs`, CI): 표준 perft 5국면(시작 1–5단계 20…4,865,609, Kiwipete 1–4, 3번 1–5, 4번 1–4, 5번 1–4) 전부 일치,
+  FEN 왕복, SAN(구분 표기 Nbd2/Nfd2, 승진 b8=Q+), 체크 지나가는 캐슬링 금지, 앙파상, 메이트·스테일메이트, 무승부 넷,
+  메이트 1·1·2·3수 찾기, 무작위 상대 4전 전승(전부 메이트). 시작 국면 1초에 깊이 9–10, 약 15만–30만 노드(네이티브 node).
+- 강도·튜닝(`tools/arena-chess.mjs`, 3만 노드, 8쌍): 15만 노드 vs 3만 노드 14.5/16(+394). 겹폰·고립폰 감점을 끄면 8.5/16(+22),
+  룩 열린 줄 보너스를 끄면 6.5/16(−66), 둘 다 ±24% 안이라 그대로 둠. 사람이나 다른 엔진과는 재지 않았다.
+- 화면: 말을 누르고 갈 칸(빨간 점, 잡기는 점선 동그라미). 승진이면 판 아래에 퀸·룩·비숍·나이트 단추(취소 포함). 체크면 킹 칸에 빨간 펜
+  동그라미와 상태 줄 "체크!". 캐슬링은 킹을 두 칸 옆으로(룩도 같이 뜀). 말은 펜 낙서 SVG 여섯 개(흰 말은 종이에 잉크 선, 검은 말은 잉크에 종이색 선).
 
 ## 디자인 결정
 

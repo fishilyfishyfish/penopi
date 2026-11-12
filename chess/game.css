@@ -1,0 +1,37 @@
+/* Chess: LOA's paper board (a1 dark, hatched), pieces as pen doodles. */
+.game-chess .board { height: var(--size); display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+.sq { position: relative; border: 0; padding: 0; margin: 0; background: var(--sheet); cursor: pointer; display: grid; place-items: center; }
+.sq.dk { background: repeating-linear-gradient(-45deg, transparent 0 7px, var(--hatch) 7px 8.5px), var(--sheet); }
+.sq:focus-visible { outline: 3px dashed var(--pen); outline-offset: -5px; z-index: 2; }
+.sq.last::after { content: ""; position: absolute; inset: 14% 6%; background: var(--marker); border-radius: 40% 10% 45% 12%; transform: rotate(-4deg); pointer-events: none; }
+/* check: a red pen circle round the king's square */
+.sq.check::before { content: ""; position: absolute; inset: 5%; border: 3px solid var(--pen); border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%; z-index: 2; pointer-events: none; }
+.pc { width: 84%; height: 84%; pointer-events: none; position: relative; z-index: 1; overflow: visible; }
+.pc path, .pc circle { stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.pc.w .b { fill: var(--sheet); stroke: var(--ink); }
+.pc.b .b { fill: var(--ink); stroke: var(--ink); }
+.pc.w .l { fill: none; stroke: var(--ink); }
+.pc.b .l { fill: none; stroke: var(--sheet); }
+.pc .l.x { stroke: var(--ink); stroke-width: 2.6; }
+.pc.w .d { fill: var(--ink); stroke: none; }
+.pc.b .d { fill: var(--sheet); stroke: none; }
+.sq.sel .pc { filter: drop-shadow(0 0 0 var(--pen)); }
+.sq.sel::before { content: ""; position: absolute; inset: 6%; border: 2.6px solid var(--pen); border-radius: 48% 52% 50% 50%; z-index: 2; pointer-events: none; }
+.dot { width: 22%; height: 22%; border-radius: 45% 55% 50% 50%; background: var(--pen); pointer-events: none; position: relative; z-index: 2; }
+.ring { position: absolute; inset: 6%; border-radius: 52% 48% 50% 50% / 46% 54% 46% 54%; border: 2.6px dashed var(--pen); pointer-events: none; z-index: 2; }
+.btn.promo { padding: 0 6px; }
+.btn.promo svg { width: 34px; height: 34px; }
+.trail { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+.trail path { fill: none; stroke-linecap: round; stroke-dasharray: 1 1; }
+.trail .line { stroke: rgba(27, 27, 27, .45); stroke-width: 2; stroke-dashoffset: 1; animation: draw .35s ease-out forwards, erase .6s .9s ease-in-out forwards; }
+.trail .smudge { stroke: rgba(27, 27, 27, .07); stroke-width: 9; stroke-dashoffset: 1; animation: draw .6s .9s ease-in-out forwards, smudge .5s 1.4s forwards; }
+.ghost { position: absolute; width: 12.5%; height: 12.5%; display: grid; place-items: center; pointer-events: none; z-index: 2; animation: fade .3s .45s forwards; }
+.ghost svg.x { position: absolute; z-index: 2; inset: 8%; width: 84%; height: 84%; overflow: visible; }
+.ghost svg.x path { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 520; stroke-dashoffset: 520; animation: draw .4s ease-out forwards; }
+.ghost.b svg.x path { stroke: var(--sheet); }
+.wipe { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.wipe path { fill: none; stroke: var(--sheet); stroke-width: 200; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: draw .5s ease-in-out forwards; }
+.wipe.done { transition: opacity .25s; opacity: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .board.drawin .pc { animation: drawin .3s ease-out backwards; }
+}

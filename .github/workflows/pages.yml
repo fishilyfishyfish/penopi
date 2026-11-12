@@ -70,6 +70,10 @@ jobs:
       - name: Test draughts engine
         run: node tools/test-draughts.mjs
 
+      # perft on the standard test positions, rules and draws, forced mates, strength
+      - name: Test chess engine
+        run: node tools/test-chess.mjs
+
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright

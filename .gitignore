@@ -1,0 +1,6 @@
+# WASM builds (tools/build-wasm.sh; the Pages workflow builds them)
+amazons/pkg/
+backgammon/pkg/
+target/
+node_modules/
+_site/

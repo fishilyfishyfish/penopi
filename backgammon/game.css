@@ -1,0 +1,36 @@
+/* Backgammon board: drawn in one SVG (viewBox 932 × 706) in the same pen-on-paper style.
+   Points are long pen triangles, every other one hatched; checkers are hand-coloured like LOA's pieces. */
+.game-backgammon .board { height: calc(var(--size) * 706 / 932); background: transparent; }
+/* the board is wider than tall, so it can take more width */
+.stage.game-backgammon { --size: max(280px, min(94vw, calc((100vh - 330px) * 932 / 706), 720px)); }
+.stage.game-backgammon.playing { --size: max(280px, min(94vw, calc((100vh - 360px) * 932 / 706), 760px)); }
+.bg { display: block; width: 100%; height: 100%; overflow: visible; user-select: none; -webkit-user-select: none; }
+.bg .paper { fill: var(--sheet); }
+.bg .pen { fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; }
+.bg .pt-h { fill: url(#hatch); stroke: var(--ink); stroke-width: 1.8; stroke-linejoin: round; }
+.bg .pt-o { fill: var(--sheet); stroke: var(--ink); stroke-width: 1.8; stroke-linejoin: round; }
+.bg .lbl { font: 700 19px var(--font); fill: var(--muted); text-anchor: middle; dominant-baseline: middle; }
+.bg .ck-w { fill: var(--sheet); stroke: var(--ink); stroke-width: 2.8; }
+.bg .ck-b { fill: var(--ink); stroke: var(--ink); stroke-width: 2.8; }
+.bg .ck-n { font: 700 24px var(--font); text-anchor: middle; dominant-baseline: central; }
+.bg .ck-n.w { fill: var(--ink); } .bg .ck-n.b { fill: var(--sheet); }
+.bg .off-w { fill: var(--sheet); stroke: var(--ink); stroke-width: 2.2; }
+.bg .off-b { fill: var(--ink); stroke: var(--ink); stroke-width: 2.2; }
+.bg .last { fill: var(--marker); }
+.bg .can { fill: none; stroke: var(--pen); stroke-width: 3; stroke-dasharray: 7 5; }
+.bg .dest { fill: var(--pen); }
+.bg .die { fill: var(--sheet); stroke: var(--ink); stroke-width: 2.8; }
+.bg .pip { fill: var(--ink); }
+.bg .used { opacity: .3; }
+.bg .cube rect { fill: var(--sheet); stroke: var(--ink); stroke-width: 2.8; }
+.bg .cube text { font: 700 24px var(--font); fill: var(--ink); text-anchor: middle; dominant-baseline: central; }
+.bg .cube.mine rect, .bg .cube.theirs rect { stroke: var(--pen); }
+.bg .hit { fill: transparent; cursor: pointer; }
+.bg .hit:focus-visible { outline: none; stroke: var(--pen); stroke-width: 3; stroke-dasharray: 6 5; }
+.bg .dice-hit { cursor: pointer; }
+.bg .hint { font: 700 18px var(--font); fill: var(--muted); text-anchor: middle; }
+@media (prefers-reduced-motion: no-preference) {
+  .bg .roll { animation: roll .35s ease-out; transform-box: fill-box; transform-origin: center; }
+}
+@keyframes roll { from { transform: rotate(-60deg) scale(.6); opacity: 0; } }
+.ask .q { font-weight: 700; }

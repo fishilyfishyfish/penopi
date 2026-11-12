@@ -1,0 +1,127 @@
+/* Penopi: a sketchbook page. Pen lines on paper, a doodle peeking over the board.
+   Shared by the lobby and every game page. Taken from LOA 튀르크 (fishilyfishyfish/LOA_turk) as it was.
+   Gaegu (SIL OFL, fonts/OFL.txt), cut down to Latin, punctuation and the 2,350 common Hangul syllables:
+   a character outside that set falls back to the system font (tools/check-lines.py keeps the lines inside it). */
+@font-face { font-family: "Gaegu Local"; font-weight: 400; font-display: swap; src: url("fonts/Gaegu-Regular.woff2") format("woff2"); }
+@font-face { font-family: "Gaegu Local"; font-weight: 700; font-display: swap; src: url("fonts/Gaegu-Bold.woff2") format("woff2"); }
+:root {
+  --paper: #f7f6f1;
+  --sheet: #fdfdfb;
+  --ink: #1b1b1b;
+  --muted: #6b6a64;
+  --pen: #d8452f;                       /* red pen: selection, moves, captures */
+  --marker: rgba(255, 214, 0, .45);     /* highlighter: the last move */
+  --hatch: rgba(27, 27, 27, .13);       /* pencil hatching on dark squares */
+  --hand: 255px 15px 225px 15px / 15px 225px 15px 255px; /* a wobbly hand-drawn box */
+  --font: "Gaegu Local", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font); font-size: 18px; }
+button { font-family: inherit; }
+
+/* the page: status line + rules button, Penopi over the board, the board, the pickers (or one button).
+   --size is the board's width; a game whose board isn't square sets its own height from it. */
+.stage { --size: max(260px, min(92vw, calc(100vh - 360px), 560px)); min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; }
+.stage.playing { --size: max(260px, min(92vw, calc(100vh - 330px), 620px)); }
+.bar { width: var(--size); max-width: 100%; min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.status { font-size: 21px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip { width: 14px; height: 14px; border-radius: 48% 52% 46% 54%; display: inline-block; flex: none; }
+.chip.b { background: var(--ink); }
+.chip.w { background: var(--sheet); border: 2px solid var(--ink); }
+
+/* Penopi: a dome peeking over the board's top edge, wandering left and right; the bubble follows it.
+   Its body runs on below the edge, hidden behind the board, so nothing shows underneath when it waddles.
+   --x is its position along the edge; --w is the perch width and --bw the bubble width (set by place()). */
+@property --x { syntax: "<length>"; inherits: true; initial-value: 0px; }
+.perch { position: relative; width: var(--size); max-width: 100%; height: 142px; margin-bottom: -12px; --x: 0px; --w: 300px; --bw: 200px; }
+.portrait { position: absolute; bottom: -36px; left: var(--x); width: 74px; height: 104px; margin-left: -37px; z-index: 0; transition: transform .8s ease-in-out; cursor: pointer; -webkit-tap-highlight-color: transparent; outline: none; }
+.portrait:focus-visible svg { filter: drop-shadow(0 0 2px var(--pen)); }
+.portrait.sunk { transform: translateY(22px); }      /* lost: half hidden until the next game */
+.portrait.duck { transform: translateY(58px); transition-duration: .25s; } /* all the way down for a moment */
+.perch:has(.portrait.sunk) .bubble { bottom: 56px; }
+.portrait svg { display: block; width: 100%; height: 100%; overflow: visible; transform-origin: 50% 100%; }
+.portrait .face { transition: transform .3s; }
+.portrait[data-dir="l"] .face { transform: translateX(-3px); }
+.portrait[data-dir="r"] .face { transform: translateX(3px); }
+.bubble { --l: clamp(0px, calc(var(--x) - var(--bw) / 2), calc(var(--w) - var(--bw))); position: absolute; left: var(--l); bottom: 78px; margin: 0; width: max-content; max-width: min(300px, 100%); background: var(--sheet); border: 2.4px solid var(--ink); border-radius: var(--hand); padding: 8px 14px; font-size: 19px; line-height: 1.3; transform-origin: calc(var(--x) - var(--l)) bottom; }
+.bubble::before { content: ""; position: absolute; left: clamp(20px, calc(var(--x) - var(--l)), calc(var(--bw) - 20px)); bottom: -10px; width: 17px; height: 17px; margin-left: -8px; background: var(--sheet); border-right: 2.4px solid var(--ink); border-bottom: 2.4px solid var(--ink); transform: rotate(45deg); }
+.bubble:empty { visibility: hidden; }
+/* thinking: pen dots beside the head */
+.dots { position: absolute; left: calc(var(--x) + 30px); bottom: 54px; display: none; gap: 5px; pointer-events: none; }
+.perch:has(.portrait.thinking) .dots { display: flex; }
+.dots i { width: 6px; height: 6px; border-radius: 45% 55% 50% 50%; background: var(--ink); }
+/* dozing: sinks a little, sways, and pen z's float up */
+.portrait.doze { transform: translateY(16px); transition-duration: 1.6s; }
+.zz { position: absolute; left: calc(var(--x) + 28px); bottom: 26px; display: none; pointer-events: none; font-weight: 700; line-height: 1; }
+.perch:has(.portrait.doze) .zz { display: block; }
+.zz span { position: absolute; left: 0; bottom: 0; }
+.zz span:nth-child(1) { font-size: 14px; } .zz span:nth-child(2) { font-size: 17px; left: 10px; bottom: 11px; } .zz span:nth-child(3) { font-size: 21px; left: 21px; bottom: 24px; }
+@media (prefers-reduced-motion: no-preference) {
+  .perch.walking { transition: --x var(--walk, 1.8s) ease-in-out; }
+  .portrait.run svg { animation-duration: .2s; }
+  .portrait.hop svg { animation: hop .45s ease-out 3; }
+  .portrait.poked svg { animation: poked .35s ease-out; }
+  .portrait.doze svg { animation: sway 3s ease-in-out infinite; }
+  .zz span { opacity: 0; animation: zz 2.4s ease-out infinite; }
+  .zz span:nth-child(2) { animation-delay: .5s; } .zz span:nth-child(3) { animation-delay: 1s; }
+  .dots i { opacity: 0; animation: dot 1.5s ease-out infinite; }
+  .dots i:nth-child(2) { animation-delay: .3s; }
+  .dots i:nth-child(3) { animation-delay: .6s; }
+  .portrait.walk svg { animation: waddle .45s ease-in-out infinite; }
+  .portrait.thinking svg { animation: bob 1.2s ease-in-out infinite; }
+  .bubble.pop { animation: pop .25s ease-out; }
+}
+@keyframes waddle { 25% { transform: rotate(-3deg) translateY(-3px); } 75% { transform: rotate(3deg) translateY(-3px); } }
+@keyframes poked { 25% { transform: scale(1.1, .86); } 55% { transform: scale(.94, 1.08) rotate(-3deg); } }
+@keyframes dot { 0% { opacity: 0; transform: scale(.3); } 12%, 70% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+@keyframes sway { 50% { transform: rotate(5deg); } }
+@keyframes zz { 0% { opacity: 0; transform: translateY(6px); } 25%, 70% { opacity: 1; } 100% { opacity: 0; transform: translateY(-8px); } }
+@keyframes bob { 50% { transform: translateY(-5px); } }
+@keyframes hop { 40% { transform: translateY(-16px) rotate(-4deg); } 70% { transform: translateY(0) scale(1.06, .94); } }
+@keyframes pop { from { transform: scale(.94); opacity: .4; } }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes erase { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -1; } }
+@keyframes smudge { to { opacity: 0; } }
+@keyframes fade { to { opacity: 0; transform: scale(.85); } }
+@keyframes drawin { from { opacity: 0; transform: scale(.4) rotate(-20deg); } }
+
+/* boards: the game draws its own, these are the shared pieces of the look */
+.board { position: relative; z-index: 1; width: var(--size); max-width: 100%; background: var(--sheet); touch-action: manipulation; }
+.grid { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 3; }
+.hatched { background: repeating-linear-gradient(-45deg, transparent 0 7px, var(--hatch) 7px 8.5px), var(--sheet); }
+
+/* buttons: a wobbly pen box with a solid ink shadow */
+.controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; min-height: 48px; }
+.btn { font: inherit; font-size: 21px; font-weight: 700; border: 2.6px solid var(--ink); border-radius: var(--hand); padding: 8px 22px; min-height: 48px; background: var(--sheet); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 3px 4px 0 var(--ink); transition: transform .1s, box-shadow .1s; text-decoration: none; touch-action: manipulation; }
+.btn:hover { transform: translate(-1px, -1px) rotate(-1deg); box-shadow: 4px 5px 0 var(--ink); }
+.btn:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+.btn:focus-visible { outline: 2.6px dashed var(--pen); outline-offset: 5px; }
+.btn:disabled { opacity: .45; cursor: default; transform: none; box-shadow: 2px 2px 0 var(--ink); }
+.btn.small { font-size: 18px; padding: 1px 14px; min-height: 36px; box-shadow: 2px 3px 0 var(--ink); }
+.btn.quiet { font-size: 17px; min-height: 40px; padding: 2px 14px; color: var(--muted); border-color: var(--muted); box-shadow: 2px 3px 0 var(--muted); }
+.setup { display: flex; flex-direction: column; align-items: center; gap: 10px; width: var(--size); max-width: 100%; }
+
+/* rules sheet: a page torn from the same sketchbook, with Penopi's remarks in the margin */
+.sheet { width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 40px); overflow: auto; padding: 20px 22px 18px; background: var(--sheet); color: var(--ink); font: inherit; border: 2.6px solid var(--ink); border-radius: 18px 6px 20px 8px / 8px 20px 6px 18px; box-shadow: 5px 6px 0 var(--ink); }
+.sheet::backdrop { background: rgba(27, 27, 27, .3); }
+.sheet h2 { font-size: 30px; margin: 0; outline: none; }
+.sheet .snark { margin: 2px 0 12px; font-size: 19px; color: var(--pen); }
+.sheet ol { margin: 0; padding-left: 24px; font-size: 19px; line-height: 1.35; }
+.sheet li { margin-bottom: 10px; }
+.sheet .aside { display: block; color: var(--muted); font-size: 17px; }
+.sheet svg { display: block; width: 100%; max-width: 360px; margin: 6px 0 2px; }
+.sheet .record { margin: 14px 0 0; padding-top: 10px; border-top: 2px dashed var(--ink); font-size: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.sheet .record .snark { flex-basis: 100%; order: -1; margin: 0; }
+.sheet .note { margin: 12px 0 0; font-size: 15px; color: var(--muted); }
+.sheet .foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.sheet .foot form { margin: 0; }
+
+/* a small card in the margin: an answer the game needs (backgammon's take or pass, say) */
+.ask { width: var(--size); max-width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; font-size: 20px; }
+
+@media (max-width: 420px) {
+  .bubble { font-size: 18px; }
+}

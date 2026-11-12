@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#f7f6f1"/>
+  <!-- the board, from its top edge down, with one black and one white piece -->
+  <g clip-path="inset(0)">
+    <rect x="40" y="300" width="432" height="260" fill="#fdfdfb"/>
+    <path d="M148 300 V512 M256 300 V512 M364 300 V512 M40 408 H472" stroke="#1b1b1b" stroke-width="5" stroke-linecap="round"/>
+    <path d="M152 304 L360 512 M176 304 L384 512 M200 304 L408 512 M224 304 L432 512 M248 304 L456 512" stroke="#1b1b1b" stroke-opacity=".13" stroke-width="5" transform="translate(-112 0)" clip-path="url(#c1)"/>
+    <ellipse cx="94" cy="356" rx="40" ry="38" fill="#1b1b1b"/>
+    <ellipse cx="418" cy="460" rx="38" ry="40" fill="#fdfdfb" stroke="#1b1b1b" stroke-width="8"/>
+  </g>
+  <defs><clipPath id="c1"><rect x="148" y="300" width="108" height="108"/></clipPath></defs>
+  <!-- Penopi peeking over the edge -->
+  <path d="M176 300 L176 230 C170 160 196 82 238 72 C256 66 274 70 286 78 C312 100 330 160 328 230 L328 300 Z" fill="#fdfdfb" stroke="#1b1b1b" stroke-width="10" stroke-linejoin="round"/>
+  <circle cx="234" cy="158" r="9" fill="none" stroke="#1b1b1b" stroke-width="7"/>
+  <circle cx="280" cy="158" r="9" fill="none" stroke="#1b1b1b" stroke-width="7"/>
+  <path d="M222 212 C240 208 258 198 288 194" fill="none" stroke="#1b1b1b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M28 302 Q256 292 486 298" fill="none" stroke="#1b1b1b" stroke-width="11" stroke-linecap="round"/>
+</svg>

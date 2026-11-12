@@ -1,0 +1,96 @@
+name: Test and deploy to Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # amazons builds with stable; backgammon has its own pinned toolchain (backgammon/rust-toolchain.toml),
+      # which rustup installs on first use.
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
+          (cd backgammon && rustup show active-toolchain || rustup toolchain install)
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            amazons/engine/target
+            backgammon/engine/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('*/engine/Cargo.lock', 'backgammon/rust-toolchain.toml') }}
+
+      # must match wasm-bindgen in both engines' Cargo.lock
+      - uses: actions/cache@v4
+        id: wb-cache
+        with:
+          path: ~/.cargo/bin/wasm-bindgen
+          key: wasm-bindgen-cli-${{ runner.os }}-0.2.129
+      - name: Install wasm-bindgen-cli
+        if: steps.wb-cache.outputs.cache-hit != 'true'
+        run: cargo +stable install wasm-bindgen-cli --version 0.2.129 --locked
+
+      - name: Test engines
+        run: |
+          (cd amazons/engine && cargo +stable test --locked)
+          (cd backgammon/engine && cargo test --release --locked)
+
+      - name: Lines fit the font
+        run: |
+          pip install --quiet fonttools brotli
+          python3 tools/check-lines.py
+
+      - name: Build WASM
+        run: ./tools/build-wasm.sh
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-1.56.1
+      # plays every game in Chromium for a while (tools/smoke.mjs)
+      - name: Smoke test
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node tools/smoke.mjs 20
+          rm -rf node_modules
+
+      # the site: everything but the engine sources and tools, plus the list of files for offline use (sw.js)
+      - name: Assemble site
+        run: python3 tools/assemble.py _site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

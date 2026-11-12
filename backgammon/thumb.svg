@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <defs><pattern id="h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="6" height="6" fill="#fdfdfb"/><line x1="0" y1="0" x2="0" y2="6" stroke="rgba(27,27,27,.3)" stroke-width="2"/></pattern></defs>
+  <g stroke="#1b1b1b" stroke-width="1.6" stroke-linejoin="round">
+    <path d="M6 6 L18 50 L30 6" fill="url(#h)"/><path d="M30 6 L42 52 L54 6" fill="#fdfdfb"/><path d="M66 6 L78 49 L90 6" fill="url(#h)"/><path d="M90 6 L102 51 L114 6" fill="#fdfdfb"/>
+    <path d="M6 114 L18 70 L30 114" fill="#fdfdfb"/><path d="M30 114 L42 69 L54 114" fill="url(#h)"/><path d="M66 114 L78 71 L90 114" fill="#fdfdfb"/><path d="M90 114 L102 68 L114 114" fill="url(#h)"/>
+  </g>
+  <g fill="none" stroke="#1b1b1b" stroke-linecap="round" stroke-width="2.6"><path d="M3 4 Q60 2 117 5 M116 3 Q118 60 115 117 M117 116 Q60 118 3 115 M4 117 Q2 60 5 3 M58 3 Q60 60 61 117"/></g>
+  <g stroke="#1b1b1b" stroke-width="2.2"><ellipse cx="18" cy="104" rx="8.5" ry="8" fill="#fdfdfb"/><ellipse cx="18" cy="88" rx="8" ry="8.5" fill="#fdfdfb"/><ellipse cx="102" cy="15" rx="8.5" ry="8" fill="#1b1b1b"/><ellipse cx="102" cy="31" rx="8" ry="8.5" fill="#1b1b1b"/></g>
+  <g stroke="#1b1b1b" stroke-width="2.2"><rect x="70" y="54" width="15" height="15" rx="3" fill="#fdfdfb" transform="rotate(-8 77 61)"/><rect x="89" y="56" width="15" height="15" rx="3" fill="#fdfdfb" transform="rotate(10 96 63)"/></g>
+  <g fill="#1b1b1b"><circle cx="74" cy="58" r="1.6"/><circle cx="80" cy="64" r="1.6"/><circle cx="93" cy="60" r="1.6"/><circle cx="96" cy="64" r="1.6"/><circle cx="99" cy="68" r="1.6"/></g>
+</svg>

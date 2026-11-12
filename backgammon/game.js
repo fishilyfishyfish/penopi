@@ -34,8 +34,14 @@ function engine() {
   return client;
 }
 const call = (fn, ...args) => engine().call({ fn, args });
-const ctx = () => JSON.stringify({ cube: { value: S.cube.value, owner: S.cube.owner }, match: null });
-const canDouble = (side) => S.cube.owner !== other(side) && S.cube.value < 64;
+// match play: S.match = {length, score: [me, Penopi], post} (post: the Crawford game has been played), or null for money
+const needs = (side) => S.match.length - S.match.score[side];
+const isCrawford = () => !!S.match && !S.match.post && (needs(HUMAN) === 1 || needs(AI) === 1);
+const ctx = () => JSON.stringify({ cube: { value: S.cube.value, owner: S.cube.owner },
+  match: S.match ? { length: S.match.length, score: S.match.score, post: S.match.post } : null });
+const canDouble = (side) => S.cube.owner !== other(side) && S.cube.value < 64
+  && (!S.match || (!isCrawford() && S.cube.value < needs(side))); // no cube in the Crawford game; no point doubling past the target
+const matchText = () => (S.match ? `${S.match.length}점 매치 · 나 ${S.match.score[HUMAN]} : ${api.name} ${S.match.score[AI]}${isCrawford() ? ' · 크로포드 판' : ''}` : '');
 async function aiMove(dice) {
   try {
     return await engine().call({ fn: 'ai_move_json', args: [S.board, AI, dice[0], dice[1], BOT, seed32(), ctx()] }, { timeout: AI_LIMIT });
@@ -72,7 +78,7 @@ const allHome = (b, side) => { for (let p = 7; p <= 25; p++) if (b[idx(side, p)]
 // ---------- flow ----------
 function opening() {
   S.phase = 'opening';
-  api.status('주사위 하나씩 굴려서 큰 쪽이 먼저');
+  api.status(S.match ? `${matchText()} · 굴려서 선 정하기` : '주사위 하나씩 굴려서 큰 쪽이 먼저');
   tray();
   draw();
 }
@@ -113,7 +119,7 @@ async function refresh() {
 }
 function myStatus() {
   const chip = api.chip(S.color);
-  if (S.phase === 'roll' || !S.dice) return `${chip}내 차례 · 굴려${canDouble(HUMAN) ? ' (더블도 돼)' : ''}`;
+  if (S.phase === 'roll' || !S.dice) return `${chip}내 차례 · 굴려${canDouble(HUMAN) ? ' (더블도 돼)' : ''}${S.match ? ` · ${S.match.score[HUMAN]}:${S.match.score[AI]}${isCrawford() ? ' 크로포드' : ''}` : ''}`;
   const d = `${S.dice[0]}-${S.dice[1]}`;
   if (!S.ts) return `${chip}${d}`;
   if (S.ts.need === 0) return `${chip}${d} · 둘 수 있는 수가 없어`;
@@ -263,8 +269,29 @@ async function checkOver() {
 }
 async function endGame(winner, points, how) {
   S.phase = 'over';
-  tray(); draw();
   const mine = winner === HUMAN, kind = { pass: '포기', backgammon: '백개먼', gammon: '개먼', single: '' }[how];
+  if (S.match) {
+    S.match.lastCrawford = isCrawford();
+    S.match.score[winner] = Math.min(S.match.length, S.match.score[winner] + points);
+    if (S.match.score[winner] < S.match.length) { // the match goes on: one game of it is over
+      S.phase = 'between';
+      tray(); draw();
+      api.thinking(false);
+      api.say(mine ? (how === 'pass' ? 'humanWinPass' : 'matchGameLost') : (how === 'pass' ? 'engineWinPass' : 'matchGameWon'),
+        { pts: points, a: S.match.score[AI], h: S.match.score[HUMAN], v: S.cube.value });
+      api.status(`${mine ? '이 판은 내가' : `이 판은 ${api.name}가`} · ${kind ? kind + ', ' : ''}${points}점 · ${S.match.score[HUMAN]} : ${S.match.score[AI]}`);
+      return;
+    }
+    tray(); draw();
+    api.over({
+      winner: mine ? 'human' : 'penopi',
+      key: mine ? 'humanWinMatch' : 'engineWinMatch',
+      vars: { pts: points, n: S.match.length, a: S.match.score[AI], h: S.match.score[HUMAN] },
+      text: `${api.chip(mine ? S.color : S.color === 'w' ? 'b' : 'w')}${S.match.length}점 매치 ${mine ? '내가 이겼다' : `${api.name}가 이겼다`} · ${S.match.score[HUMAN]} : ${S.match.score[AI]}`,
+    });
+    return;
+  }
+  tray(); draw();
   const key = mine
     ? (how === 'pass' ? 'humanWinPass' : how !== 'single' ? 'humanWinGammon' : undefined)
     : (how === 'pass' ? 'engineWinPass' : how === 'backgammon' ? 'engineWinBackgammon' : how === 'gammon' ? 'engineWinGammon' : undefined);
@@ -276,6 +303,19 @@ async function endGame(winner, points, how) {
   });
 }
 
+// the next game of a match: same colours, fresh board and cube; the game after the Crawford game is "post"
+async function nextGame() {
+  if (S.phase !== 'between') return;
+  const my = g;
+  if (S.match.lastCrawford) S.match.post = true;
+  Object.assign(S, { phase: 'idle', dice: null, opening: null, groups: [], ts: null, swap: false, lastMove: null,
+    cube: { value: 1, owner: null }, turns: 0, verdict: undefined, said: {} });
+  try { await startBoard(); } catch { return; }
+  if (my !== g) return;
+  if (isCrawford()) api.say('crawford');
+  opening();
+}
+
 // ---------- the buttons under the board ----------
 function tray() {
   const t = api.tray;
@@ -285,6 +325,7 @@ function tray() {
     + `<button type="button" class="btn" data-act="double"${canDouble(HUMAN) ? '' : ' disabled'}>더블 (${S.cube.value * 2})</button>`;
   else if (S.phase === 'move') html = `<button type="button" class="btn small" data-act="undo"${S.groups.length ? '' : ' disabled'}>되돌리기</button>`
     + `<button type="button" class="btn" data-act="done"${S.ts && S.ts.done ? '' : ' disabled'}>${S.ts && S.ts.need === 0 ? '넘기기' : '턴 끝내기'}</button>`;
+  else if (S.phase === 'between') html = '<button type="button" class="btn" data-act="next">다음 판</button>';
   else if (S.phase === 'cube') html = `<span class="q">큐브 ${S.cube.value * 2}, 받을래?</span>`
     + '<button type="button" class="btn" data-act="take">받기</button><button type="button" class="btn" data-act="pass">포기</button>';
   if (t.dataset.h !== html) { t.innerHTML = html; t.dataset.h = html; }
@@ -443,10 +484,15 @@ export default {
       <span class="aside">내가 더블하면 받을지 말지 잘 생각해. 생각해도 소용없겠지만.</span></li>
     <li><b>상대가 하나도 못 뺐을 때 이기면 개먼(두 배), 그 상대 말이 아직 바나 내 집에 있으면 백개먼(세 배).</b>
       <span class="aside">점수는 거기에 큐브 숫자를 곱한 거야.</span></li>
+    <li><b>한 판 / 매치:</b> '한 판'은 한 판으로 끝나는 머니 게임. 'n점'은 판마다 딴 점수(개먼·백개먼·큐브 포함)를 더해서 먼저 n점에 닿는 쪽이 이기는 매치야.
+      한쪽이 처음으로 1점만 남기면 그다음 한 판은 큐브를 쓸 수 없다(크로포드 판). 큐브를 올려 봤자 이길 만큼보다 커지면 더블할 수 없어.
+      <span class="aside">매치는 점수 상황 따라 두는 법이 달라져. 나는 그것까지 계산해.</span></li>
     <li><b>판에서는</b> 내 말을 누르면 왼쪽 주사위만큼 바로 가. 그 숫자로 못 가면 오른쪽 숫자로. 주사위를 누르면 순서가 바뀌어. 다 옮겼으면 '턴 끝내기'.
       <span class="aside">빨간 점선 동그라미가 지금 움직일 수 있는 말이야.</span></li>`,
   },
-  debug: () => ({ phase: S.phase, turns: S.turns, cube: S.cube }),
+  options: [{ key: 'match', label: '게임', default: 'money',
+    choices: [{ id: 'money', html: '한 판' }, { id: '3', html: '3점' }, { id: '5', html: '5점' }, { id: '7', html: '7점' }, { id: '9', html: '9점' }, { id: '11', html: '11점' }] }],
+  debug: () => ({ phase: S.phase, turns: S.turns, cube: S.cube, match: S.match }),
   mount(a) {
     api = a;
     a.board.innerHTML = '<svg class="bg" viewBox="0 0 932 706" role="img" aria-label="백개먼 판"></svg>';
@@ -467,13 +513,14 @@ export default {
     api.tray.addEventListener('click', (e) => {
       const b = e.target.closest('[data-act]');
       if (!b || b.disabled) return;
-      ({ roll: onRoll, double: onDouble, undo: onUndoStep, done: onDone, take: () => onAnswer(true), pass: () => onAnswer(false) })[b.dataset.act]();
+      ({ roll: onRoll, double: onDouble, undo: onUndoStep, done: onDone, take: () => onAnswer(true), pass: () => onAnswer(false), next: nextGame })[b.dataset.act]();
     });
     startBoard().then(() => draw()).catch(() => api.status('엔진을 불러오지 못했어'));
   },
-  async start(colour) {
+  async start(colour, opts = {}) {
     stop();
-    const my = g;
+    const my = g, len = Number(opts.match) || 0;
+    S.match = len ? { length: len, score: [0, 0], post: false, lastCrawford: false } : null;
     Object.assign(S, { phase: 'idle', color: colour, dice: null, opening: null, groups: [], ts: null, swap: false, lastMove: null,
       cube: { value: 1, owner: null }, turns: 0, verdict: undefined, said: {} });
     try { await startBoard(); } catch { api.status('엔진을 불러오지 못했어'); return; }

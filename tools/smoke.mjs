@@ -131,6 +131,7 @@ async function backgammon(sideIdx) {
     const acts = await p.evaluate(() => [...document.querySelectorAll('#tray [data-act]:not([disabled])')].map((e) => e.dataset.act));
     if (acts.includes('roll')) { await p.click('#tray [data-act="roll"]'); turns++; }
     else if (acts.includes('take')) await p.click('#tray [data-act="take"]');
+    else if (acts.includes('next')) await p.click('#tray [data-act="next"]');
     else if (acts.includes('done')) await p.click('#tray [data-act="done"]');
     else {
       const hits = await p.$$('rect.hit[tabindex="0"][data-point]');

@@ -1,5 +1,6 @@
 // Backgammon-only lines, added to shared/lines.js. All new.
-// When: backgammon/game.js. {v}: cube value, {m} {o}: my / Penopi's opening die, {pts}: points won.
+// When: backgammon/game.js. {v}: cube value, {m} {o}: my / Penopi's opening die, {pts}: points won,
+// {a} {h}: Penopi's / my match score, {n}: match length.
 export const LINES = {
   $replace: ['pick'],
   pick: [
@@ -56,6 +57,12 @@ export const LINES = {
   humanWinGammon: ["개먼이라고? ...주사위 탓이야.", "하나도 못 뺐어. 이 얘기는 아무한테도 하지 마."],
   engineWin: ["{n}턴 만에 다 뺐다. 주사위도 실력이야.", "경주에서 이겼네. 당연히.", "{pts}점 가져간다."],
   humanWin: ["주사위가 너만 좋아하네. 그게 다야.", "운이 좋았어. 다음 판엔 내 차례야."],
+  // match play
+  matchGameWon: ["이 판은 내 거. {a} 대 {h}.", "{pts}점 가져간다. 지금 {a}:{h}.", "한 판 더 가져왔어. {a} 대 {h}, 앞은 나야."],
+  matchGameLost: ["이 판은 줄게. {h}:{a}. 매치는 안 줘.", "{pts}점 줬네. 아직 끝난 거 아니야.", "{h} 대 {a}. 다음 판에서 갚아 줄게."],
+  crawford: ["크로포드 판이야. 이번 판은 큐브 못 써.", "한 점 남았네. 이번 판은 큐브 없이 간다."],
+  engineWinMatch: ["{n}점 매치 끝. {a} 대 {h}, 내가 이겼어.", "매치 승리. 큐브 계산까지 내가 한 수 위였어."],
+  humanWinMatch: ["...{n}점 매치를 졌다. {h} 대 {a}. 주사위 탓이야.", "매치를 내줬네. 다음 매치는 더 길게 하자. 길면 내가 이겨."],
   chatBackgammon: [
     "백개먼 판에는 말이 30개, 포인트가 24개 있어.",
     "더블링 큐브는 1920년대 미국에서 생겼대. 판돈을 키우는 장치였지.",

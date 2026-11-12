@@ -35,7 +35,8 @@ shared/
   character.js         페노피 SVG와 동작(걷기, 생각 점, 졸기, 찌르기, 숨기, 폴짝, 가라앉기)
   talk.js              대사 고르기(최근 4줄 회피, 자리표시자), 게임 대사 합치기
   lines.js             공통 대사(튀르크 대사에서 출발) + 로비 대사
-  shell.js             대국 화면 골격과 "언제 무슨 말을 하나". 게임 인터페이스 설명은 이 파일 맨 위
+  shell.js             대국 화면 골격과 "언제 무슨 말을 하나". 게임 인터페이스 설명은 이 파일 맨 위.
+                       게임 옵션(`options`: 규칙·매치 길이 같은 선택지)을 선후공 단추 위에 보여 주고 게임별로 기억한다
   engine.js            워커 래퍼(id 요청/응답, 시간 초과 시 워커 종료·재시작)
   record.js            게임별 전적(localStorage `penopi.<id>.record`), 마지막 방문
   sketch.js            손그림 격자, 연필 궤적, 지우개, 말 뛰기
@@ -70,7 +71,7 @@ tools/
 2. `games.js`에 한 줄: `{ id, name, blurb, pitch }`.
 
 `game.js`는 `shared/shell.js` 맨 위에 적힌 객체를 export default 한다:
-`id, name, sides[{id, html, first}], lines, chat, rules{html, note}, longGame, mount(api), start(side), reset()`.
+`id, name, sides[{id, html, first}], options?, lines, chat, rules{html, note}, longGame, mount(api), start(side, opts), reset()`.
 게임은 자기 흐름을 돌리면서 `api.yourTurn / api.engineTurn / api.humanMoved / api.engineMoved / api.over`를 부르면 된다.
 대사·전적·규칙 시트·찌르기·졸기·재촉은 shell이 한다. 워커는 `shared/engine.js`의 프로토콜
 (`{id, ...}` → `{id, result}` | `{id, error}`)만 지키면 된다. 그 밖에 스모크 테스트에 게임을 추가한다(`tools/smoke.mjs`).
@@ -111,7 +112,11 @@ tools/
 | 체스 | 이 레포에서 새로 만듦(`chess/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. 오프닝 북, 내 차례에 0.7초씩 미리 생각 |
 | 백개먼 | backgammon-palamedes Rust → WASM(신경망 포함) | module worker, 원래 `engine-worker.js`처럼 함수 이름 + 인자 RPC | 팔라메데스 봇(3수 탐색, WASM 평균 0.4초). 4초 넘으면 워커를 죽이고 2수(`rank_moves_json` 1위)로 |
 
-- 백개먼은 머니 게임 + 더블링 큐브(매치 없음). 페노피의 큐브 판단은 원래 사이트의 팔라메데스 봇(`ai_cube_json`). 개먼 2배, 백개먼 3배, × 큐브.
+- 백개먼은 대국 전에 '게임'을 고른다(사용자 요청): 한 판(머니 게임) 또는 3·5·7·9·11점 매치. 매치는 판마다 점수(개먼·백개먼·큐브 포함)를
+  더하고, 판 사이에 "다음 판" 단추. 크로포드 규칙(처음 1점 남은 다음 판은 큐브 없음, 그 뒤는 post), 이길 점수를 넘는 더블은 불가.
+  엔진에는 원래 사이트와 같은 매치 상황(`match: {length, score, post}`)을 넘겨서 수와 큐브 판단이 점수 상황을 따른다.
+  전적은 머니면 판마다, 매치면 매치마다 한 번. 고르기는 shell의 게임 옵션(`options`)으로, 브라우저에 기억된다.
+- 더블링 큐브. 페노피의 큐브 판단은 원래 사이트의 팔라메데스 봇(`ai_cube_json`). 개먼 2배, 백개먼 3배, × 큐브.
   나는 항상 엔진 진영 0(아래, 홈은 오른쪽). 색은 보이는 모양뿐(원래 사이트와 같은 방식). 입력은 원래 사이트의 "바로 이동".
 - 검증(`tools/verify-engines.mjs`, 2026-11-12): 원래 레포를 그 레포 방식대로 빌드한 WASM은 이 레포 빌드와 **바이트 단위로 같다.**
   무작위 대국 국면에서 백개먼 6국면

@@ -1,5 +1,5 @@
 // Engine vs engine for chess/engine.js: node tools/arena-chess.mjs <A> <B> [pairs=10]
-// A player is "nodes:N" (search budget) optionally with ",key=value" weight overrides, e.g. nodes:30000,bishopPair=0.
+// A player: see player() below, e.g. nodes:30000,bishopPair=0 or ms:200,file=/tmp/old-engine.js.
 // Each pair starts from the same 2 random opening moves and swaps colours. Prints A's score.
 import { createRequire } from 'module';
 import path from 'path';
@@ -13,13 +13,20 @@ const pairs = Number(pairsArg || 10);
 let seed = 7;
 const rnd = (n) => { seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff; return seed % n; };
 
+// "nodes:N" or "ms:T" (time per move), then ",key=value" weight overrides, or ",file=path" for another engine file
 function player(spec) {
   const [head, ...kv] = spec.split(',');
-  const nodes = Number(head.split(':')[1]);
+  const [kind, val] = head.split(':');
   const weights = {};
-  for (const p of kv) { const [k, v] = p.split('='); weights[k] = Number(v); }
-  const E = ChessEngine({ ttBits: 18, weights });
-  return (moves) => { E.setStart(); for (const m of moves) E.play(m); return E.think({ nodes, soft: 1 }).move; };
+  let Engine = ChessEngine;
+  for (const p of kv) {
+    const [k, v] = p.split('=');
+    if (k === 'file') Engine = require(path.resolve(v)).ChessEngine;
+    else weights[k] = Number(v);
+  }
+  const E = Engine({ ttBits: 18, weights });
+  const cfg = kind === 'ms' ? { time: Number(val) } : { nodes: Number(val), soft: 1 };
+  return (moves) => { E.setStart(); for (const m of moves) E.play(m); return E.think(cfg).move; };
 }
 function game(white, black, opening) {
   const R = ChessEngine({ ttBits: 8 });

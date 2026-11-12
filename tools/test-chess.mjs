@@ -2,7 +2,8 @@
 //  1. perft on the standard test positions (start, "Kiwipete", and positions 3–5 of the usual suite), which
 //     between them exercise castling, en passant, promotions, pins and checks;
 //  2. FEN round trip, notation, the draw rules, mate/stalemate detection;
-//  3. the search finds forced mates, and beats a random player every game.
+//  3. every opening book move is legal;
+//  4. the search finds forced mates, and beats a random player every game.
 import { createRequire } from 'module';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -69,6 +70,22 @@ function sanOf(fen) { E.setFen(fen); return E.legalMoves().map((m) => E.san(m)).
   for (const s of shuffle) { const m = E.legalMoves().find((x) => E.san(x) === s); E.play(m); st = E.status(); }
   check(st === 'draw:repetition', `threefold repetition: ${st}`);
   console.log('rules: SAN, disambiguation, castling through check, en passant, promotion, mate, stalemate, draws');
+}
+
+// ---------- the opening book: every line legal ----------
+{
+  const { BOOK } = await import(path.join(root, 'chess', 'book.js'));
+  let moves = 0;
+  for (const line of BOOK) {
+    E.setStart();
+    for (const tok of line.split(' ')) {
+      const m = E.legalMoves().find((x) => E.san(x).replace(/[+#]/g, '') === tok.replace(/[+#]/g, ''));
+      check(m !== undefined, `book: ${tok} is not legal in ${line}`);
+      if (m === undefined) break;
+      E.play(m); moves++;
+    }
+  }
+  console.log(`book: ${BOOK.length} lines, ${moves} moves, all legal`);
 }
 
 // ---------- 3. search ----------

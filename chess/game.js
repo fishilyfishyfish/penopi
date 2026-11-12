@@ -1,12 +1,15 @@
 // Chess. The engine (engine.js) was written for this site: alpha-beta in plain JS, loaded on the page for the
 // rules and in worker.js for thinking (as LOA). Board and doodles follow LOA; the pieces are pen doodles.
 // Input: tap a piece, then where it goes. Promotion asks which piece under the board.
+// Penopi plays from a small opening book (book.js) while the game follows one of its lines, and thinks on my
+// time too (short searches of my position fill the worker's table, as LOA does).
 import { LINES } from './lines.js';
+import { BOOK } from './book.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
-const THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
+const THINK_MS = 2500, PONDER_MS = 700, HARD_LIMIT = THINK_MS + 4000;
 const R = globalThis.ChessEngine({ ttBits: 8 });
 const { MATE, MATE_BOUND, mFrom, mTo, mPromo, mFlags } = R;
 const NAMES = ['', '폰', '나이트', '비숍', '룩', '퀸', '킹'];
@@ -15,7 +18,7 @@ const sideName = (c) => (c === 0 ? '백' : '흑');
 
 let api, boardEl, sqEls = [];
 let human = 0, moves = [], state = null, sel = -1, promo = null, playing = false, g = 0;
-let engine = null, localE = null;
+let engine = null, localE = null, ponder = null, inBook = true, firstSearch = false;
 
 function replay() {
   R.setStart();
@@ -42,11 +45,56 @@ async function think(time) {
     return localE.think({ time: Math.min(time, 600) });
   }
 }
+// the book: position (FEN without the move counters) → book moves, built once from the SAN lines
+let book = null;
+const posKey = (fen) => fen.split(' ').slice(0, 4).join(' ');
+function buildBook() {
+  book = new Map();
+  const B = globalThis.ChessEngine({ ttBits: 4 });
+  for (const line of BOOK) {
+    B.setStart();
+    for (const tok of line.split(' ')) {
+      const m = B.legalMoves().find((x) => B.san(x).replace(/[+#]/g, '') === tok.replace(/[+#]/g, ''));
+      if (m === undefined) break;
+      const k = posKey(B.fen());
+      if (!book.has(k)) book.set(k, new Set());
+      book.get(k).add(m);
+      B.play(m);
+    }
+  }
+}
+function bookMove() {
+  if (!inBook) return 0;
+  if (!book) buildBook();
+  const set = book.get(posKey(R.fen()));
+  const options = set ? [...set].filter((m) => state.legal.includes(m)) : [];
+  if (!options.length) { inBook = false; return 0; }
+  return options[Math.floor(Math.random() * options.length)];
+}
+// on my time: short searches of my position, one after another, until I move
+function startPonder() {
+  const my = g, ply = moves.length;
+  ponder = (async () => {
+    while (my === g && playing && moves.length === ply && !state.result && state.side === human) {
+      if (!(await think(PONDER_MS))) break;
+    }
+  })();
+}
 async function engineMove() {
   const my = g;
   api.engineTurn({ color: colorOf(human ^ 8) });
   render();
   const t0 = Date.now();
+  R.setStart(); for (const x of moves) R.play(x);
+  const bm = bookMove();
+  if (bm) {
+    await new Promise((r) => setTimeout(r, 600 + Math.random() * 600));
+    if (my !== g) return;
+    commit(bm, { score: 0, nodes: 0, book: true });
+    return;
+  }
+  if (ponder) await ponder;
+  if (my !== g) return;
   const info = await think(THINK_MS);
   if (my !== g || !info) return;
   if (Date.now() - t0 < 400) await new Promise((r) => setTimeout(r, 400));
@@ -72,7 +120,7 @@ function next() {
   tray();
   if (!playing) return;
   if (state.result) { finish(); return; }
-  if (state.side === human) api.yourTurn({ color: colorOf(human), label: sideName(human), text: myStatus() });
+  if (state.side === human) { api.yourTurn({ color: colorOf(human), label: sideName(human), text: myStatus() }); if (!inBook) startPonder(); }
   else engineMove();
   render();
 }
@@ -99,7 +147,10 @@ function engineTalk(m, info, taken) {
   if (state.check) facts.push(['engineCheck', null, 0.8]);
   if (taken && taken !== R.Q) facts.push(['engineCap', { pc: NAMES[taken] }, 0.6]);
   if (fl & R.FLAG_CASTLE) facts.push(['engineCastle', null, 0.5]);
+  const fresh = info && info.book ? true : firstSearch;
+  firstSearch = !!(info && info.book);
   api.engineMoved({
+    verdict: fresh ? null : undefined, // the book has no evaluation to compare against
     p: 1 / (1 + Math.exp(-sc / 300)),
     mate: sc >= MATE_BOUND ? Math.ceil((MATE - sc) / 2) - 1 : 0,
     doomed: sc <= -MATE_BOUND,
@@ -228,7 +279,7 @@ function scribble(s, p) {
   setTimeout(() => el.remove(), 900);
 }
 const clearDoodles = () => { for (const e of boardEl.querySelectorAll('.trail, .ghost')) e.remove(); };
-function stop() { g++; if (engine) engine.restart(); }
+function stop() { g++; ponder = null; inBook = true; firstSearch = false; if (engine) engine.restart(); }
 
 export default {
   id: 'chess',

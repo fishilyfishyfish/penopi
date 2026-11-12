@@ -224,7 +224,8 @@ python3 tools/assemble.py _site                # 배포본 미리 보기
 
 - 폰트: Gaegu, SIL Open Font License 1.1 (`shared/fonts/OFL.txt`). LOA_turk에서 쓰던 서브셋 그대로.
 - 아이콘·썸네일·캐릭터: 직접 그린 SVG(LOA_turk 아이콘 포함). 아이콘 폰트나 외부 그림은 쓰지 않는다.
-- 규칙 설명은 전부 직접 쓴 문장.
+- 규칙 설명은 전부 직접 쓴 문장. 원작자가 알려진 게임은 규칙 시트 맨 아래(`rules.note`)에 만든 사람을 적는다(공식 제품처럼 보이지 않게):
+  LOA = 클로드 수시(Claude Soucie), 브레이크스루 = 댄 트로이카(Dan Troyka, 2000). 체스·국제 드래프트·백개먼은 전통 게임이라 없음.
 - 엔진: 원래 레포와 같은 조건(palamedes Cargo.toml은 MIT).
 
 ## 성능 기록 (2026-11-12, 이 컨테이너, Chromium headless, `tools/smoke.mjs`)

@@ -285,6 +285,7 @@ export default {
       <span class="aside">너한테 자주 일어날 일이야.</span></li>
     <li><b>무승부:</b> 한 수로 둘 다 동시에 이어지거나, 같은 국면이 같은 차례로 세 번 나오면.
       <span class="aside">나랑 비기는 것도 쉽지 않아.</span></li>`,
+    note: 'LOA(Lines of Action)는 클로드 수시(Claude Soucie)가 만든 게임입니다.',
   },
   debug: () => ({ legal: state.legal.slice(), stm: state.stm, human, over: state.over, playing, plies: moves.length }),
   mount(a) {

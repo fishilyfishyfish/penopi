@@ -221,6 +221,7 @@ export default {
       <span class="aside">비기는 일은 없어. 앞으로만 가니까 언젠가는 끝나.</span></li>
     <li><b>팁: 상대 말이 내 쪽 두 번째 줄까지 오면 바로 잡아.</b> 다음 수에 끝줄로 들어오니까.
       <span class="aside">규칙은 아니고 충고야. 근데 거의 규칙이야.</span></li>`,
+    note: '브레이크스루(Breakthrough)는 댄 트로이카(Dan Troyka)가 2000년에 만든 게임입니다.',
   },
   debug: () => ({ legal: state.legal.slice(), stm: state.stm, human, over: state.over, playing, plies: moves.length,
     cells: Array.from({ length: 64 }, (_, s) => visual(s)) }),

@@ -60,6 +60,16 @@ async function waitFor(p, cond, ms) {
   await p.close();
 }
 
+// ---------- how long a line about a move stays up (shared/shell.js, tools/bubble-test.html) ----------
+{
+  const { p, errors } = await page(base + 'tools/bubble-test.html');
+  const r = await p.waitForFunction(() => window.__result).then((h) => h.jsonValue());
+  if (!r.ok) fail('bubble: ' + r.log.map(([what, got]) => `${what} → "${got}"`).join(', '));
+  if (errors.length) fail('bubble: ' + errors.join(' | '));
+  console.log(`bubble: ${r.ok ? 'move lines expire on time' : 'WRONG'}`);
+  await p.close();
+}
+
 // ---------- LOA and Amazons: tap squares ----------
 async function boardGame(id, sideIdx) {
   const { p, errors } = await page(base + id + '/');

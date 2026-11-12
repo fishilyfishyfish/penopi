@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><title>bubble test</title><link rel="stylesheet" href="../shared/paper.css"></head>
+<body>
+<!-- Checks how long Penopi's lines about a move stay up (shared/shell.js): a fake game drives the shell
+     through turns and records the bubble. Run by tools/smoke.mjs; result in window.__result. -->
+<script type="module">
+import { boot } from '../shared/shell.js';
+let api;
+const game = {
+  id: 'bubbletest', name: '테스트',
+  sides: [{ id: 0, first: true, html: '시작' }],
+  lines: { $replace: ['fast', 'humanStreak', 'streak', 'milestone', 'rematch', 'startHuman'],
+    myMove: ['내 수 얘기'], penopiMove: ['페노피 수 얘기'], fast: [], humanStreak: [], streak: [], milestone: [], rematch: [], startHuman: ['시작 대사'] },
+  rules: { html: '' },
+  mount(a) { api = a; },
+  start() {}, reset() {},
+};
+boot(game);
+Math.random = () => 0.99; // no chance lines (small talk, "fast") in the way
+const bubble = () => document.querySelector('.bubble').textContent;
+const log = [];
+const step = (what, fn) => { fn(); log.push([what, bubble()]); };
+document.querySelector('[data-side="0"]').click();
+step('my turn 1', () => api.yourTurn());
+step('I move', () => api.humanMoved({ facts: [['myMove']] }));
+step('Penopi turn 1', () => api.engineTurn());
+step('Penopi moves, says nothing', () => api.engineMoved({ p: 0.5, verdict: null, facts: [['nothing']] }));
+step('my turn 2', () => api.yourTurn());           // the remark on my move must be gone
+step('I move, no remark', () => api.humanMoved({}));
+step('Penopi turn 2', () => api.engineTurn());
+step('Penopi moves, remarks', () => api.engineMoved({ p: 0.5, verdict: null, facts: [['penopiMove']] }));
+step('my turn 3', () => api.yourTurn());           // Penopi's remark stays through my turn
+step('I move, no remark', () => api.humanMoved({}));
+step('Penopi turn 3', () => api.engineTurn());     // ... and is gone when Penopi's next turn begins
+step('Penopi turn 3 again', () => api.engineTurn()); // a second call in the same turn changes nothing
+step('game says something', () => api.say('myMove'));
+step('my turn 4', () => api.yourTurn());
+const want = ['시작 대사', '내 수 얘기', '내 수 얘기', '내 수 얘기', '', '', '', '페노피 수 얘기', '페노피 수 얘기', '페노피 수 얘기', '', '', '내 수 얘기', '내 수 얘기'];
+window.__result = { ok: log.every(([, got], i) => got === want[i]), log };
+</script>
+</body>
+</html>

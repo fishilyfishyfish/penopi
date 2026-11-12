@@ -228,7 +228,9 @@ async function onDouble() {
   if (S.phase !== 'roll' || !canDouble(HUMAN)) return;
   const my = g;
   S.phase = 'ai'; tray();
-  api.engineTurn({ text: `큐브 ${S.cube.value * 2} · ${api.name}가 생각 중` });
+  // still my turn: Penopi only answers the double (not a turn of its own, so no engineTurn)
+  api.status(`큐브 ${S.cube.value * 2} · ${api.name}가 생각 중`);
+  api.thinking(true);
   api.say('thinkCube');
   let take = true;
   try { ({ take } = await call('ai_cube_json', S.board, HUMAN, BOT, seed32(), ctx())); } catch { if (my !== g) return; }

@@ -60,7 +60,19 @@ export function boot(game) {
 
   let pc = null; // Penopi's controls, once animated
   const talk = createTalk(lines, perch.querySelector('.bubble'), () => pc && pc.place(pc.x, pc.walking()));
-  const say = (key, vars) => talk.say(key, vars);
+  // A line about a move (mine or Penopi's) lasts until the turn after next begins: a remark on my move is gone by
+  // the time it's my turn again, so "못 들어오네" can't read as if it were about the new turn. Other lines
+  // (small talk, nagging, poking, the start) stay until something else is said.
+  const bubbleEl = perch.querySelector('.bubble');
+  let turnNo = 0, lastTurn = null, bound = null; // bound: turnNo when the move line showing now was said
+  const say = (key, vars) => { const ok = talk.say(key, vars); if (ok) bound = null; return ok; };
+  const sayMove = (key, vars) => { const ok = talk.say(key, vars); if (ok) bound = turnNo; return ok; };
+  const chat = () => { if (talk.chat(topics)) bound = null; };
+  function turnBegins(who) {
+    if (who === lastTurn) return;
+    lastTurn = who; turnNo++;
+    if (bound !== null && turnNo - bound >= 2) { bubbleEl.textContent = ''; bound = null; }
+  }
   pc = animate(perch, say, () => !tray.hidden && tray.dataset.waiting === '1');
 
   // ---------- a game in progress ----------
@@ -78,7 +90,7 @@ export function boot(game) {
     get gameId() { return gameId; },
     get started() { return started; },
     get side() { return side; },
-    say,
+    say: sayMove, // a game's own lines are about what just happened in the game
     has: talk.has,
     status,
     chip,
@@ -96,15 +108,17 @@ export function boot(game) {
     },
     // my turn: status line, and Penopi's small talk / nagging if I take long
     yourTurn({ color, label, text } = {}) {
+      turnBegins('human');
       pc.thinking(false);
       status(text || `${chip(color)}내 차례${label ? ` (${label})` : ''}`);
       stopTimers();
       turnStart = Date.now();
       const g = gameId, still = () => g === gameId && started && turnStart && Date.now() - turnStart >= 14000;
-      chatTimer = setTimeout(() => { if (still() && Math.random() < 0.6) talk.chat(topics); }, 15000);
+      chatTimer = setTimeout(() => { if (still() && Math.random() < 0.6) chat(); }, 15000);
       slowTimer = setTimeout(() => { if (still()) { say('slow'); pc.pace(() => g === gameId); } }, 40000);
     },
     engineTurn({ color, text } = {}) {
+      turnBegins('penopi');
       stopTimers(); turnStart = 0;
       status(text || `${chip(color)}${NAME} 차례`);
       pc.thinking(true);
@@ -114,9 +128,9 @@ export function boot(game) {
     humanMoved({ facts = [], plies = 0 } = {}) {
       const elapsed = turnStart ? Date.now() - turnStart : 99999;
       stopTimers(); turnStart = 0;
-      for (const [key, vars, chance = 1] of facts) if (Math.random() < chance && say(key, vars)) return;
-      if (elapsed < 1500 && Math.random() < 0.3) say('fast');
-      else if (!flags.long && plies >= (game.longGame || 60)) { flags.long = true; say('longGame'); }
+      for (const [key, vars, chance = 1] of facts) if (Math.random() < chance && sayMove(key, vars)) return;
+      if (elapsed < 1500 && Math.random() < 0.3) sayMove('fast');
+      else if (!flags.long && plies >= (game.longGame || 60)) { flags.long = true; sayMove('longGame'); }
     },
     // after Penopi's move.
     //   p        Penopi's winning chance now (0..1), from the engine's own evaluation
@@ -127,25 +141,25 @@ export function boot(game) {
     engineMoved(info) {
       pc.thinking(false);
       const { p } = info;
-      if (info.mate) { say(flags.mate ? 'mateCount' : 'mate', { n: info.mate }); flags.mate = true; prevP = 1; return; }
-      if (info.doomed) { if (!flags.doom) { flags.doom = true; say('doomed'); pc.act('duck', 1300); } prevP = 0; return; }
+      if (info.mate) { sayMove(flags.mate ? 'mateCount' : 'mate', { n: info.mate }); flags.mate = true; prevP = 1; return; }
+      if (info.doomed) { if (!flags.doom) { flags.doom = true; sayMove('doomed'); pc.act('duck', 1300); } prevP = 0; return; }
       const swing = prevP === null ? 0 : p - prevP; // how much my last move changed Penopi's chances
       prevP = p;
       let verdict = info.verdict;
       if (verdict === undefined) verdict = swing > 0.15 && p > 0.6 ? 'blunder' : swing <= -0.2 ? 'oops' : swing <= -0.1 ? 'good' : null;
       if (verdict === 'blunder') {
-        if (!(swing > 0.15 && Math.random() < 0.3 && say('blunderSwing', { d: Math.round(swing * 100) }))) say('blunder');
+        if (!(swing > 0.15 && Math.random() < 0.3 && sayMove('blunderSwing', { d: Math.round(swing * 100) }))) sayMove('blunder');
         return;
       }
-      if (verdict === 'oops' && Math.random() < 0.8) { say('selfBlunder'); return; }
-      if (verdict === 'good' && Math.random() < 0.7) { say('goodMove'); return; }
-      for (const [key, vars, chance = 1] of info.facts || []) if (Math.random() < chance && say(key, vars)) return;
-      if (p > 0.85 && !flags.lead) { flags.lead = true; say('winning', { p: Math.round(p * 100) }); pc.walkTo(0.15 + Math.random() * 0.7, 1800); return; }
-      if (p < 0.2 && !flags.behind) { flags.behind = true; say('losing', { p: Math.round(p * 100) }); return; }
+      if (verdict === 'oops' && Math.random() < 0.8) { sayMove('selfBlunder'); return; }
+      if (verdict === 'good' && Math.random() < 0.7) { sayMove('goodMove'); return; }
+      for (const [key, vars, chance = 1] of info.facts || []) if (Math.random() < chance && sayMove(key, vars)) return;
+      if (p > 0.85 && !flags.lead) { flags.lead = true; sayMove('winning', { p: Math.round(p * 100) }); pc.walkTo(0.15 + Math.random() * 0.7, 1800); return; }
+      if (p < 0.2 && !flags.behind) { flags.behind = true; sayMove('losing', { p: Math.round(p * 100) }); return; }
       const r = Math.random();
-      if (info.nodes && r < 0.2 && talk.has('normalNodes')) say('normalNodes', { nodes: man(info.nodes), depth: info.depth });
-      else if (r < 0.3) say('normal');
-      else if (r < 0.45) talk.chat(topics);
+      if (info.nodes && r < 0.2 && talk.has('normalNodes')) sayMove('normalNodes', { nodes: man(info.nodes), depth: info.depth });
+      else if (r < 0.3) sayMove('normal');
+      else if (r < 0.45) chat();
     },
     // the game is over. winner: 'human' | 'penopi' | 'draw'; vars fill the lines ({n} moves etc.);
     // key: a more specific winning/losing line to try first (e.g. 'engineWinGammon')
@@ -180,6 +194,7 @@ export function boot(game) {
     gameId++;
     started = true; side = game.sides[i].id;
     prevP = null; flags = {};
+    turnNo = 0; lastTurn = null; bound = null;
     clearTimeout(winTimer);
     pc.sunk(false);
     $('pick').hidden = true;

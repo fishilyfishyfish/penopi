@@ -18,7 +18,22 @@ self.addEventListener('install', (e) => {
     await self.skipWaiting();
   })());
 });
-self.addEventListener('activate', (e) => { e.waitUntil(self.clients.claim()); });
+// On activation, drop kept files that the deployed site no longer has (a game taken off the site must not
+// live on in someone's offline copy). Without precache.json (not deployed) nothing is dropped.
+self.addEventListener('activate', (e) => {
+  e.waitUntil((async () => {
+    try {
+      const list = await (await fetch('precache.json', { cache: 'no-store' })).json();
+      const keep = new Set(SHELL.concat(list).map((u) => new URL(u, self.registration.scope).href));
+      const c = await caches.open(CACHE);
+      for (const req of await c.keys()) {
+        const u = new URL(req.url); u.search = '';
+        if (!keep.has(u.href)) await c.delete(req);
+      }
+    } catch { /* offline or not deployed: keep everything */ }
+    await self.clients.claim();
+  })());
+});
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;

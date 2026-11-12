@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { backgammon: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { backgammon: 9000, oware: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -83,7 +83,9 @@ async function boardGame(id, sideIdx) {
     if (k > 0) slowest = Math.max(slowest, turn);
     const d = await dbg(p);
     if (d.over || mine >= MOVES) break;
-    if (id === 'morris') { // moves: (from + 1) | to << 5 | (removed + 1) << 10; tap from (if any), to, removed (if any)
+    if (id === 'oware') { // moves: the pit (0–11); the pits are the board's only buttons, in pit order
+      await sq(d.legal[Math.floor(Math.random() * d.legal.length)]).click();
+    } else if (id === 'morris') { // moves: (from + 1) | to << 5 | (removed + 1) << 10; tap from (if any), to, removed (if any)
       const m = d.legal[Math.floor(Math.random() * d.legal.length)], f = (m & 31) - 1, t = (m >> 5) & 31, r = ((m >> 10) & 31) - 1;
       if (f >= 0) await sq(f).click();
       await sq(t).click();
@@ -160,6 +162,7 @@ await boardGame('draughts', 1);
 await boardGame('chess', 1);
 await boardGame('gomoku', 1);
 await boardGame('morris', 1);
+await boardGame('oware', 1);
 await backgammon(1);
 await browser.close();
 server.close();

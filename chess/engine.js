@@ -290,7 +290,10 @@ function ChessEngine(opts) {
 
   // ---------- evaluation ----------
   // tables are written as seen from White, rank 8 at the top (index 0 = a8); black squares are mirrored
-  const W = Object.assign({ bishopPair: 30, doubled: 12, isolated: 12, rookOpen: 18, rookHalf: 9, tempo: 10 }, opts.weights || {});
+  // feature switches (1 on, 0 off) are here too so self-play can measure each: mob, ks (king safety), pp (passed pawn extras),
+  // rfp, fut, lmp, iid, asp, qcheck
+  const W = Object.assign({ bishopPair: 30, doubled: 12, isolated: 12, rookOpen: 18, rookHalf: 9, tempo: 10,
+    mob: 1, ks: 1, pp: 1, rfp: 1, fut: 1, lmp: 1, iid: 1, asp: 1, qcheck: 1 }, opts.weights || {});
   const MG = [0, 100, 320, 330, 500, 950, 0], EG = [0, 120, 300, 315, 540, 950, 0];
   const PHASE = [0, 0, 1, 1, 2, 4, 0];
   const T = (rows) => rows.trim().split(/\s+/).map(Number);
@@ -482,8 +485,7 @@ function ChessEngine(opts) {
           if (!pawnHit(to, them)) mob++;
         }
       }
-      mg += sign * MOB_MG[t] * (mob - MOB_MID[t]);
-      eg += sign * MOB_EG[t] * (mob - MOB_MID[t]);
+      if (W.mob) { mg += sign * MOB_MG[t] * (mob - MOB_MID[t]); eg += sign * MOB_EG[t] * (mob - MOB_MID[t]); }
       if (hits) { units[c] += ATT_W[t] * hits; attackers[c]++; }
       if (t === R) {
         const f = fileOf(sq), own = c ? pe[5] : pe[4], opp = c ? pe[4] : pe[5];
@@ -492,7 +494,7 @@ function ChessEngine(opts) {
       }
     }
     // king safety (middlegame): attack units on the zone, counted when two or more pieces join and a queen is there
-    for (let c = 0; c < 2; c++) {
+    for (let c = 0; c < 2 && W.ks; c++) {
       const sign = c ? -1 : 1, enemy = 1 - c;
       if (attackers[enemy] >= 2 && count[(enemy ? BLACK : WHITE) | Q]) mg -= sign * SAFETY[Math.min(63, units[enemy])];
       // pawn shield in front of a king tucked away on the wing
@@ -508,7 +510,7 @@ function ChessEngine(opts) {
       }
     }
     // passed pawns: free path and king distances in the endgame
-    for (const sq of pe[6]) {
+    if (W.pp) for (const sq of pe[6]) {
       const q = board[sq], c = q >> 3, sign = c ? -1 : 1, adv = c ? 7 - rankOf(sq) : rankOf(sq);
       const fw = c ? -16 : 16, promo = c ? fileOf(sq) : 0x70 + fileOf(sq);
       if (!board[sq + fw]) eg += sign * (adv * 4);
@@ -622,7 +624,7 @@ function ChessEngine(opts) {
     nodes++;
     if (timeUp()) return 0;
     if (p >= MAXPLY) return evaluate();
-    const check = qd < 4 && inCheck(); // evasions near the leaves: so mates at the horizon are seen
+    const check = W.qcheck && qd < 4 && inCheck(); // evasions near the leaves: so mates at the horizon are seen
     let best = -INF, n;
     if (check) n = gen(MV[p], false);
     else {
@@ -678,7 +680,7 @@ function ChessEngine(opts) {
     }
     const ev = check ? -INF : evaluate();
     // reverse futility: far above beta with little depth left, the opponent won't let this happen anyway
-    if (!pv && !check && depth <= 6 && Math.abs(beta) < MATE_BOUND && ev - RFP_MARGIN * depth >= beta) return ev;
+    if (W.rfp && !pv && !check && depth <= 6 && Math.abs(beta) < MATE_BOUND && ev - RFP_MARGIN * depth >= beta) return ev;
     // null move: give the opponent a free move; if we're still above beta, this node is good enough
     if (!pv && !check && nullOk && depth >= 3 && hasPieces(side) && ev >= beta) {
       makeNull(); ply++;
@@ -688,14 +690,14 @@ function ChessEngine(opts) {
       if (sc >= beta) return sc >= MATE_BOUND ? beta : sc;
     }
     // no table move at a deep PV node: a shallower search finds one to try first
-    if (pv && !ttMove && depth >= 6) {
+    if (W.iid && pv && !ttMove && depth >= 6) {
       search(depth - 3, alpha, beta, p, true, false);
       if (stopped) return 0;
       if (tFlag[idx] && tKey[idx] === h2) ttMove = tMove[idx];
     }
     const n = gen(MV[p], false);
     score(n, p, ttMove);
-    const futile = !pv && !check && depth <= 3 && ev + FUT_MARGIN[depth] <= alpha;
+    const futile = W.fut && !pv && !check && depth <= 3 && ev + FUT_MARGIN[depth] <= alpha;
     const a0 = alpha, qt = QT[p];
     let best = -INF, bestMove = 0, legal = 0, quiets = 0;
     for (let i = 0; i < n; i++) {
@@ -707,7 +709,7 @@ function ChessEngine(opts) {
       const gives = inCheck();
       if (quiet && !gives && legal > 1 && best > -MATE_BOUND) {
         // futility and late move pruning: quiet moves that can't plausibly lift alpha at the frontier
-        if (futile || (!pv && !check && depth <= 4 && quiets >= LMP[depth])) { unmake(); quiets++; continue; }
+        if (futile || (W.lmp && !pv && !check && depth <= 4 && quiets >= LMP[depth])) { unmake(); quiets++; continue; }
       }
       if (quiet) qt[quiets++] = m;
       ply++;
@@ -766,7 +768,7 @@ function ChessEngine(opts) {
     for (let d = 1; d <= maxDepth; d++) {
       rootBest = 0;
       let sc, delta = 30, lo = -INF, hi = INF;
-      if (d >= 5 && Math.abs(prev) < MATE_BOUND) { lo = prev - delta; hi = prev + delta; } // aspiration window
+      if (W.asp && d >= 5 && Math.abs(prev) < MATE_BOUND) { lo = prev - delta; hi = prev + delta; } // aspiration window
       for (;;) {
         sc = search(d, lo, hi, 0, true, false);
         if (stopped) break;

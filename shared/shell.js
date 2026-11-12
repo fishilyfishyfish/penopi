@@ -9,6 +9,8 @@
 //                 Penopi does, undefined if neither is known yet (backgammon decides by dice)
 //   lines, chat   game lines (added to shared/lines.js, see talk.js) and extra small-talk topics
 //   rules         {title?, html: the <li>s of the rules list, note?: a line under the list}
+//   options       optional [{key, label, choices: [{id, html}], default}]: choices shown above the side buttons
+//                 (e.g. a rule set), remembered in this browser; start(side, opts) gets {key: chosen id}
 //   longGame      plies after which "longGame" may be said
 //   legacyRecord  optional localStorage key of an older record to take over
 //   mount(api)    draws the starting position; api is below
@@ -21,7 +23,7 @@
 import { NAME, perchHtml, animate } from './character.js';
 import { COMMON, CHAT } from './lines.js';
 import { mergeLines, createTalk } from './talk.js';
-import { loadRecord, visit } from './record.js';
+import { loadRecord, visit, store } from './record.js';
 import { offline } from './offline.js';
 
 export function boot(game) {
@@ -41,7 +43,7 @@ export function boot(game) {
   <div class="board" id="board" aria-label="${game.name} 판"></div>
   <div class="ask" id="tray" hidden></div>
   <div class="controls">
-    <div class="setup" id="pick"><div class="controls">${game.sides.map((s, i) => `<button type="button" class="btn" data-side="${i}">${s.html}</button>`).join('')}</div></div>
+    <div class="setup" id="pick">${(game.options || []).map((o) => `<div class="opts" role="radiogroup" aria-label="${o.label}"><span class="opts-label">${o.label}</span>${o.choices.map((c) => `<button type="button" class="btn small opt" data-opt="${o.key}" data-val="${c.id}" role="radio">${c.html}</button>`).join('')}</div>`).join('')}<div class="controls">${game.sides.map((s, i) => `<button type="button" class="btn" data-side="${i}">${s.html}</button>`).join('')}</div></div>
     <button type="button" class="btn" id="btn-new" hidden>새 게임</button>
   </div>
 </main>
@@ -207,7 +209,7 @@ export function boot(game) {
     else if (rec.games > 0 && Math.random() < 0.6) say('rematch', { w: rec.penopi, l: rec.human });
     else say(first === true ? 'startHuman' : first === false ? 'startEngine' : 'startColor');
     requestAnimationFrame(() => pc.place(pc.x)); // the board just grew
-    game.start(side);
+    game.start(side, { ...opts });
   }
   function newGame() {
     gameId++;
@@ -225,6 +227,20 @@ export function boot(game) {
     stage.querySelector('[data-side="0"]').focus();
   }
   stage.querySelectorAll('[data-side]').forEach((b) => b.addEventListener('click', () => start(Number(b.dataset.side))));
+  // game options (a rule set...): one choice per option, remembered in this browser
+  const optKey = `penopi.${game.id}.options`, opts = {};
+  const saved = store.get(optKey, {});
+  for (const o of game.options || []) opts[o.key] = o.choices.some((c) => c.id === saved[o.key]) ? saved[o.key] : o.default;
+  const showOpts = () => stage.querySelectorAll('[data-opt]').forEach((b) => {
+    const on = opts[b.dataset.opt] === b.dataset.val;
+    b.classList.toggle('on', on); b.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+  stage.querySelectorAll('[data-opt]').forEach((b) => b.addEventListener('click', () => {
+    opts[b.dataset.opt] = b.dataset.val; store.set(optKey, opts); showOpts();
+    if (game.optionChanged) game.optionChanged(b.dataset.opt, b.dataset.val);
+  }));
+  showOpts();
+  api.options = opts;
   $('btn-new').addEventListener('click', newGame);
 
   // ---------- rules sheet and record ----------

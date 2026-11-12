@@ -103,6 +103,10 @@ button { font-family: inherit; }
 .btn.small { font-size: 18px; padding: 1px 14px; min-height: 36px; box-shadow: 2px 3px 0 var(--ink); }
 .btn.quiet { font-size: 17px; min-height: 40px; padding: 2px 14px; color: var(--muted); border-color: var(--muted); box-shadow: 2px 3px 0 var(--muted); }
 .setup { display: flex; flex-direction: column; align-items: center; gap: 10px; width: var(--size); max-width: 100%; }
+/* a game's options above the side buttons (e.g. a rule set): the chosen one is inked in */
+.opts { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.opts-label { font-weight: 700; margin-right: 4px; }
+.btn.opt.on { background: var(--ink); color: var(--sheet); }
 
 /* rules sheet: a page torn from the same sketchbook, with Penopi's remarks in the margin */
 .sheet { width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 40px); overflow: auto; padding: 20px 22px 18px; background: var(--sheet); color: var(--ink); font: inherit; border: 2.6px solid var(--ink); border-radius: 18px 6px 20px 8px / 8px 20px 6px 18px; box-shadow: 5px 6px 0 var(--ink); }

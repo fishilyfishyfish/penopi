@@ -38,8 +38,11 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  // always ask the server (cheap: unchanged files come back as 304), so the browser's own cache of up to
+  // 10 minutes (GitHub Pages sends max-age=600) can't show an old version, e.g. a game just taken off the site
+  const fresh = req.mode === 'navigate' ? new Request(req.url, { cache: 'no-cache' }) : new Request(req, { cache: 'no-cache' });
   e.respondWith(
-    fetch(req).then((res) => {
+    fetch(fresh).then((res) => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
       return res;
     }).catch(() => caches.match(req, { ignoreSearch: true }).then((hit) => hit || (req.mode === 'navigate' ? caches.match(new URL('./', req.url)) : Response.error()))),

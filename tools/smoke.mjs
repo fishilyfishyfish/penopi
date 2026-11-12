@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { backgammon: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { backgammon: 9000, gomoku: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -83,7 +83,10 @@ async function boardGame(id, sideIdx) {
     if (k > 0) slowest = Math.max(slowest, turn);
     const d = await dbg(p);
     if (d.over || mine >= MOVES) break;
-    if (id === 'chess') { // moves: from | to << 7 (0x88 squares), promotion piece << 14
+    if (id === 'gomoku') { // tap a point twice: the first puts a pale stone, the second plays it
+      const s = d.legal[Math.floor(Math.random() * d.legal.length)];
+      await sq(d.cells[s]).click(); await sq(d.cells[s]).click();
+    } else if (id === 'chess') { // moves: from | to << 7 (0x88 squares), promotion piece << 14
       const m = d.legal[Math.floor(Math.random() * d.legal.length)];
       await sq(d.cells[m & 127]).click();
       await sq(d.cells[(m >> 7) & 127]).click();
@@ -150,6 +153,7 @@ async function backgammon(sideIdx) {
 await boardGame('breakthrough', 1);
 await boardGame('draughts', 1);
 await boardGame('chess', 1);
+await boardGame('gomoku', 1);
 await backgammon(1);
 await browser.close();
 server.close();

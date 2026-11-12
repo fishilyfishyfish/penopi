@@ -72,6 +72,10 @@ jobs:
       - name: Test chess engine
         run: node tools/test-chess.mjs
 
+      # win detection vs a naive counter under all three rules, forbidden shapes by hand, five/block/VCF, strength
+      - name: Test gomoku engine
+        run: node tools/test-gomoku.mjs
+
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright

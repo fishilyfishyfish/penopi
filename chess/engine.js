@@ -293,7 +293,7 @@ function ChessEngine(opts) {
   // feature switches (1 on, 0 off) are here too so self-play can measure each: mob, ks (king safety), pp (passed pawn extras),
   // rfp, fut, lmp, iid, asp, qcheck
   const W = Object.assign({ bishopPair: 30, doubled: 12, isolated: 12, rookOpen: 18, rookHalf: 9, tempo: 10,
-    mob: 1, ks: 1, pp: 1, rfp: 1, fut: 1, lmp: 1, iid: 1, asp: 1, qcheck: 1 }, opts.weights || {});
+    mob: 1, ks: 1, pp: 1, rfp: 1, fut: 1, lmp: 1, iid: 1, asp: 1, qcheck: 1, ksK: 0.25, ksCap: 150, shield: 1 }, opts.weights || {});
   const MG = [0, 100, 320, 330, 500, 950, 0], EG = [0, 120, 300, 315, 540, 950, 0];
   const PHASE = [0, 0, 1, 1, 2, 4, 0];
   const T = (rows) => rows.trim().split(/\s+/).map(Number);
@@ -443,8 +443,9 @@ function ChessEngine(opts) {
   // mobility: squares a piece reaches that aren't own pieces or covered by an enemy pawn, around a typical count
   const MOB_MG = [0, 0, 4, 5, 2, 1, 0], MOB_EG = [0, 0, 4, 5, 4, 2, 0], MOB_MID = [0, 0, 4, 6, 7, 13, 0];
   const ATT_W = [0, 0, 2, 2, 3, 5, 0];                         // king attack units by attacker
+  // penalty by attack units: grows with the square of the attack, capped (scale and cap are weights)
   const SAFETY = [];
-  for (let u = 0; u < 64; u++) SAFETY.push(Math.min(500, Math.round(u * u * 2.2)));
+  for (let u = 0; u < 64; u++) SAFETY.push(Math.min(W.ksCap, Math.round(u * u * W.ksK)));
   const zone = [new Int8Array(128), new Int8Array(128)];     // squares around each king (by king's colour index)
   const pawnHit = (sq, by) => by === WHITE // is sq covered by a pawn of colour `by`?
     ? (!off(sq - 15) && board[sq - 15] === (WHITE | P)) || (!off(sq - 17) && board[sq - 17] === (WHITE | P))
@@ -506,7 +507,7 @@ function ChessEngine(opts) {
           const s1 = k - f + ff + fw, s2 = s1 + fw;
           if (board[s1] === ((c ? BLACK : WHITE) | P)) shield += 2; else if (!off(s2) && board[s2] === ((c ? BLACK : WHITE) | P)) shield += 1;
         }
-        mg += sign * (shield * 8 - 18);
+        if (W.shield) mg += sign * (shield * 8 - 18);
       }
     }
     // passed pawns: free path and king distances in the endgame

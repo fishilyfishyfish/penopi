@@ -8,9 +8,9 @@ import { fileURLToPath } from 'url';
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const { ChessEngine } = require(path.join(root, 'chess', 'engine.js'));
-const [specA, specB, pairsArg] = process.argv.slice(2);
+const [specA, specB, pairsArg, seedArg] = process.argv.slice(2);
 const pairs = Number(pairsArg || 10);
-let seed = 7;
+let seed = Number(seedArg || 7);
 const rnd = (n) => { seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff; return seed % n; };
 
 // "nodes:N" or "ms:T" (time per move), then ",key=value" weight overrides, or ",file=path" for another engine file

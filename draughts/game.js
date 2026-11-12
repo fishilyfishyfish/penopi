@@ -1,5 +1,5 @@
 // International draughts. The engine (engine.js) was written for this site: alpha-beta in plain JS, loaded on
-// the page for the rules and in worker.js for thinking (as LOA). Board and doodles follow LOA.
+// the page for the rules and in worker.js for thinking (as LOA 튀르크 did). Board and doodles follow LOA 튀르크.
 // Input: tap a piece, then where it ends up. Capturing is compulsory, so when I must capture only the pieces
 // that can are ringed. If two capture routes end on the same square, the page asks for the route: tap the
 // squares it lands on along the way.

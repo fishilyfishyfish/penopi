@@ -1,6 +1,6 @@
 // Penopi's lines for every game. Situation → list; one is picked at random, never one of the last four said.
-// They started as LOA 튀르크's lines (fishilyfishyfish/LOA_turk characters.js), with the LOA-only ones moved to
-// loa/lines.js, then grew. A game's own lines.js adds to these lists (talk.js mergeLines).
+// They started as LOA 튀르크's lines (fishilyfishyfish/LOA_turk characters.js), without the ones about the game LOA,
+// then grew. A game's own lines.js adds to these lists (talk.js mergeLines).
 // Placeholders: {w} {l} score, {k} streak, {n} moves, {p} {d} percent, {days}, {nodes} {depth} search.
 // Keep to the 2,350 common Hangul syllables (the font has no others): tools/check-lines.py checks.
 // When each list is said: shared/shell.js (and the game for its own keys).

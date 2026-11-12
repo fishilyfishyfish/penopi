@@ -3,14 +3,13 @@
 판 위로 고개를 내민 낙서 **페노피**와 두는 보드게임 모음. 스케치북에 펜으로 그린 것 같은 화면에서, 페노피가 판 위를 알짱거리며
 엔진이 실제로 계산한 형세를 보고 비꼬고, 가끔 잡학을 늘어놓는다.
 
-- **LOA** (Lines of Action): 내 말을 전부 한 덩어리로 이으면 이긴다.
 - **백개먼**: 주사위 굴려 먼저 다 빼면 이긴다. 더블링 큐브 포함.
 - **브레이크스루**: 말은 앞으로만 간다. 하나라도 상대 끝 줄에 닿으면 이긴다.
 - **국제 드래프트**: 10×10 체커. 잡기는 의무, 가장 많이 잡는 쪽으로. 킹은 멀리 날아다닌다.
 - **체스**: 페노피의 원래 종목(튀르크는 체스 자동인형이었다). 지금은 로비 목록에서 잠시 빠져 있다.
 
-페노피는 언제나 최강으로 둔다. 엔진은 각각 [LOA_turk](https://github.com/fishilyfishyfish/LOA_turk),
-[backgammon-palamedes](https://github.com/fishilyfishyfish/backgammon-palamedes)의 것을 그대로 가져왔다.
+페노피는 언제나 최강으로 둔다. 백개먼 엔진은 [backgammon-palamedes](https://github.com/fishilyfishyfish/backgammon-palamedes)의 것을 그대로 가져왔다.
+화면과 캐릭터는 [LOA_turk](https://github.com/fishilyfishyfish/LOA_turk)에서 왔다.
 브레이크스루, 국제 드래프트, 체스 엔진은 이 레포에서 새로 만들었다(`breakthrough/engine.js`, `draughts/engine.js`, `chess/engine.js`).
 
 ## 열기

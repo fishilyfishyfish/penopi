@@ -16,7 +16,7 @@ pc = animate(perch, (k, v) => talk.say(k, v));
 
 let w = 0, l = 0;
 shelf.innerHTML = GAMES.map((game) => {
-  const { rec } = loadRecord(game.id, game.id === 'loa' ? 'turk-record' : undefined);
+  const { rec } = loadRecord(game.id);
   w += rec.penopi; l += rec.human;
   const r = rec.games ? `${NAME} ${rec.penopi}승 · 너 ${rec.human}승` : '아직 안 둬 봤어';
   return `<a class="card" href="${game.id}/" data-id="${game.id}">

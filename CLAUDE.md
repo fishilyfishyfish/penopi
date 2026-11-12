@@ -7,12 +7,15 @@
 
 - 디자인·캐릭터·대사 방식은 LOA 튀르크(fishilyfishyfish/LOA_turk)를 기준으로 한다. **페노피 = 튀르크, 이름만 다름.**
 - 엔진은 각 게임의 원래 레포에서 가져온 것을 **고치지 않는다.** 이 레포에서는 워커로 감싸기만 한다.
-  원래 레포(LOA_turk, backgammon-palamedes)는 건드리지 않는다.
+  원래 레포(LOA_turk, backgammon-palamedes)는 건드리지 않는다. LOA_turk는 이제 게임이 아니라 디자인·캐릭터·대사의 출처다.
   예외: 브레이크스루, 국제 드래프트, 체스는 원래 레포가 없어서 엔진을 이 레포(`breakthrough/engine.js`, `draughts/engine.js`,
   `chess/engine.js`)에서 새로 만들었다(사용자 요청). 이 셋은 고쳐도 된다.
 - 사이트는 빌드 도구 없이 바닐라 JS + ES 모듈. WASM만 빌드한다(CI가 함).
 - 대국 화면에는 판, 선후공(또는 색) 고르기, 오른쪽 위 "규칙" 버튼만 둔다. 게임 진행에 꼭 필요한 버튼(체스 승진 고르기, 백개먼
   굴리기·더블·턴 끝내기)은 판 아래 한 줄(`#tray`)에만 둔다. 다른 게임으로 가는 길은 규칙 시트 맨 아래 "다른 게임".
+- **LOA(Lines of Action)도 지웠다**(사용자 요청, 2026-11-12: 같은 이유로 안전하게). `loa/` 폴더(엔진 복사본·대사·규칙 포함), 로비 줄,
+  스모크·엔진 비교 도구에서 뺐다. 디자인·캐릭터·대사 방식은 계속 LOA 튀르크에서 온 것이다(LOA 판 연출은 `shared/sketch.js`에 남아 다른 게임이 씀).
+  되살리지 말 것(사용자가 다시 요청하기 전에는).
 - **아마존은 지웠다**(사용자 요청, 2026-11-12: 저작권·상표 위험을 원천 차단). 폴더·엔진 복사본·CI·도구에서 모두 뺐고, 코드는 git 기록과
   원래 레포(amazons-hippolyta)에만 남아 있다. 되살리지 말 것(사용자가 다시 요청하기 전에는).
 - 다시 보기는 넣지 않는다(사용자 결정). 다크 모드는 아직 없다(사용자 결정). 오프라인은 유지.
@@ -37,8 +40,7 @@ shared/
   record.js            게임별 전적(localStorage `penopi.<id>.record`), 마지막 방문
   sketch.js            손그림 격자, 연필 궤적, 지우개, 말 뛰기
   offline.js           서비스 워커 등록
-loa/ backgammon/ breakthrough/ draughts/ chess/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
-  loa/engine.js              LOA_turk engine.js 그대로 (fb07518)
+backgammon/ breakthrough/ draughts/ chess/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
   backgammon/engine/         backgammon-palamedes engine/ 그대로 (06492c2), backgammon/rust-toolchain.toml도
   breakthrough/engine.js     이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "브레이크스루 엔진"
   draughts/engine.js         이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "국제 드래프트 엔진"
@@ -64,7 +66,7 @@ tools/
 
 ## 게임 추가하기
 
-1. 폴더 하나: `<id>/index.html`(loa/index.html을 복사해 제목만 바꿈), `game.js`, `worker.js`, `lines.js`, `game.css`, `thumb.svg`.
+1. 폴더 하나: `<id>/index.html`(breakthrough/index.html을 복사해 제목과 엔진 스크립트만 바꿈), `game.js`, `worker.js`, `lines.js`, `game.css`, `thumb.svg`.
 2. `games.js`에 한 줄: `{ id, name, blurb, pitch }`.
 
 `game.js`는 `shared/shell.js` 맨 위에 적힌 객체를 export default 한다:
@@ -81,7 +83,7 @@ tools/
   - 내 수로 p +15%p 이상이고 p > 60% → `blunder`(내 실수), −20%p 이하 → `selfBlunder`(페노피 실수), −10%p 이하 → `goodMove`.
   - 게임이 `verdict`를 주면 swing 대신 그것을 쓴다(백개먼: 주사위 운 때문에 승률 변화로는 실수를 못 가려서 엔진 2수 분석의 손실 ≥ 0.08로 판정).
   - 그다음 게임 사건(`facts`), p > 85% 처음 → `winning`, p < 20% 처음 → `losing`, 그 외 가끔 `normal`/`normalNodes`/잡담.
-- 승률 p: LOA는 sigmoid(점수/300)(튀르크와 같음), 백개먼은 엔진이 고른 수의 결과 승률,
+- 승률 p: 백개먼은 엔진이 고른 수의 결과 승률,
   브레이크스루·국제 드래프트는 sigmoid(점수/200)(말 하나 = 100), 체스는 sigmoid(점수/300)(폰 하나 = 100).
 - 내 수 뒤(`humanMoved`): 게임 사건 → 1.5초 안에 두면 `fast`(30%) → 긴 판 `longGame`.
 - **수에 대한 대사는 다음다음 차례가 시작되면 지운다**(사용자 요청). 내 수에 대한 말은 내 다음 차례가 시작될 때, 페노피 수에 대한 말은
@@ -93,19 +95,18 @@ tools/
 - 내 차례 15초 → 잡담(60%), 40초 → `slow` + 판 위 왕복. 1분 아무 일 없으면 졸기.
 - 끝: 이기면 `engineWin`(게임이 `key`로 더 구체적인 줄을 먼저 시도: 개먼, 포기 등) + 폴짝, 3.5초 뒤 `engineWin2`/`streakBroken`.
   지면 `humanWin`(첫 패배면 `humanWinFirst`) + 가라앉기, 3.5초 뒤 `humanWin2`.
-- 게임 전용 대사 수: LOA 42줄(튀르크에서 옮긴 잡기·두 덩어리·무승부·패스 등 + 새 줄), 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄(잡담 제외).
-  공통 잡담 14주제 + 게임 잡담(chatLoa, chatBackgammon, chatBreakthrough, chatDraughts, chatChess).
+- 게임 전용 대사 수: 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄(잡담 제외).
+  공통 잡담 14주제 + 게임 잡담(chatBackgammon, chatBreakthrough, chatDraughts, chatChess).
   체스에서는 튀르크(체스 자동인형) 얘기가 다시 나온다("1770년부터 체스 뒀어", 켐펠렌, 나폴레옹).
 - 대사·규칙에 쓰는 한글은 Gaegu 서브셋(KS X 1001 2,350자) 안에서만. `python3 tools/check-lines.py`로 확인(CI도 함).
-- 튀르크 대사 중 LOA 얘기(잇기, 덩어리, 커넥트메이트, LOA 잡학)는 `loa/lines.js`로 옮겼고, "1770년"(기계 튀르크)처럼 이름이 바뀌어
+- 튀르크 대사 중 게임 LOA 얘기(잇기, 덩어리, 커넥트메이트, LOA 잡학)는 LOA를 지우면서 같이 없어졌고, "1770년"(기계 튀르크)처럼 이름이 바뀌어
   어색해진 줄과 "5초"(생각 시간이 바뀜)는 고쳤다. 다시 보기 대사는 뺐다.
 
 ## 엔진 이식
 
 | 게임 | 원래 | 워커 | 생각 시간 상한 |
 |---|---|---|---|
-| LOA | LOA_turk `engine.js`(순수 JS, 알파베타) | classic worker, `importScripts('engine.js')`. 페이지에도 엔진을 하나 더 올려 규칙(합법수, 종국) 판단 | 2.5초(튀르크는 5초), 반복 심화라 끊겨도 수가 나옴. 내 차례엔 0.7초씩 미리 생각(튀르크와 같음). 6.5초 넘으면 워커를 죽이고 페이지에서 0.6초 |
-| 브레이크스루 | 이 레포에서 새로 만듦(`breakthrough/engine.js`, 순수 JS) | LOA와 같은 방식: classic worker + 페이지에도 엔진 하나(규칙 판단) | 2.5초, 반복 심화. 6.5초 넘으면 워커를 죽이고 페이지에서 0.6초. 미리 생각(ponder)은 안 함 |
+| 브레이크스루 | 이 레포에서 새로 만듦(`breakthrough/engine.js`, 순수 JS) | LOA 튀르크와 같은 방식: classic worker + 페이지에도 엔진 하나(규칙 판단) | 2.5초, 반복 심화. 6.5초 넘으면 워커를 죽이고 페이지에서 0.6초. 미리 생각(ponder)은 안 함 |
 | 국제 드래프트 | 이 레포에서 새로 만듦(`draughts/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. ponder 없음 |
 | 체스 | 이 레포에서 새로 만듦(`chess/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. 오프닝 북, 내 차례에 0.7초씩 미리 생각 |
 | 백개먼 | backgammon-palamedes Rust → WASM(신경망 포함) | module worker, 원래 `engine-worker.js`처럼 함수 이름 + 인자 RPC | 팔라메데스 봇(3수 탐색, WASM 평균 0.4초). 4초 넘으면 워커를 죽이고 2수(`rank_moves_json` 1위)로 |
@@ -113,14 +114,14 @@ tools/
 - 백개먼은 머니 게임 + 더블링 큐브(매치 없음). 페노피의 큐브 판단은 원래 사이트의 팔라메데스 봇(`ai_cube_json`). 개먼 2배, 백개먼 3배, × 큐브.
   나는 항상 엔진 진영 0(아래, 홈은 오른쪽). 색은 보이는 모양뿐(원래 사이트와 같은 방식). 입력은 원래 사이트의 "바로 이동".
 - 검증(`tools/verify-engines.mjs`, 2026-11-12): 원래 레포를 그 레포 방식대로 빌드한 WASM은 이 레포 빌드와 **바이트 단위로 같다.**
-  무작위 대국 국면에서 LOA 깊이 5 탐색 6국면, 백개먼 6국면
+  무작위 대국 국면에서 백개먼 6국면
   (팔라메데스 수, 2수 상위 3개 에퀴티, 큐브 판단)이 모두 같았다.
 
 ## 브레이크스루 엔진 (2026-11-12, 사용자 요청으로 새로 만듦)
 
 - 규칙: 8×8, 각자 16개를 자기 쪽 두 줄에, 백 선. 앞으로 한 칸(빈칸) 또는 앞 대각선(빈칸이나 상대 말, 상대 말이면 잡음).
   상대 끝 줄에 닿거나 상대 말을 다 잡으면 승. 둘 수가 없으면 패(거의 없음). 무승부 없음.
-- 표현: `Int8Array(64)`, 칸 = 행×8+열, 행 0 = 1랭크(백의 집). 수 = from | to<<6 | 잡기 4096 (LOA와 같은 꼴).
+- 표현: `Int8Array(64)`, 칸 = 행×8+열, 행 0 = 1랭크(백의 집). 수 = from | to<<6 | 잡기 4096 (LOA 튀르크 엔진과 같은 꼴).
 - 탐색: 네가맥스 알파베타(PVS), 반복 심화, 치환표(32비트 조브리스트 키 둘), 킬러·히스토리 정렬, 늦은 수 감축(LMR),
   잡는 수만 보는 정지 탐색. 모든 노드에서 이 게임의 강제 사실 두 개를 먼저 본다:
   (1) 둘 차례 쪽 말이 끝 줄 한 칸 앞에 있으면 다음 수에 반드시 이긴다(그 말은 언제나 끝 줄로 갈 수가 있다: 정면이 막혀도
@@ -176,7 +177,7 @@ tools/
 - 오프닝 북(`chess/book.js`): 흔한 오프닝 주요 수순 44줄(637수, SAN). 페이지가 국면(FEN에서 수 번호 뺀 것)별 북 수 표를 만들어
   북 안이면 그중 하나를 무작위로 둔다(다른 순서로 같은 국면에 와도 됨). 북을 벗어나면 그 판에서는 다시 안 씀. 북 수와 그 직후 첫 탐색 수에는
   승률 변화 판정(블런더 등)을 하지 않는다(비교할 평가가 없어서).
-- 미리 생각하기: 북을 벗어난 뒤 내 차례에는 0.7초씩 계속 탐색해 워커의 치환표를 채운다(LOA와 같은 방식).
+- 미리 생각하기: 북을 벗어난 뒤 내 차례에는 0.7초씩 계속 탐색해 워커의 치환표를 채운다(LOA 튀르크와 같은 방식).
 - 측정(`tools/arena-chess.mjs`, `tools/wac.mjs`, `tools/vs-stockfish.mjs`; Stockfish 16은 측정에만 쓰고 사이트에 안 넣음):
   - 처음 버전: WAC(Win at Chess 300문제, 2.5초) 279/300. Stockfish(`UCI_Elo` 제한, 수당 0.5초, 우리 2.5초, 10판씩)
     1800 상대 7/10, 2100 상대 6/10, 2400 상대 2/10 → 그 눈금으로 약 2100.
@@ -195,13 +196,13 @@ tools/
 ## 디자인 결정
 
 - 페르치(`.perch`)·말풍선·버튼·규칙 시트 CSS는 LOA_turk index.html 그대로 `shared/paper.css`로 옮겼다. 판 CSS는 게임별 `game.css`.
-- LOA 판 연출(연필 궤적, 지우개로 지우고 다시 그리기, 잡힌 말 낙서, 이긴 덩어리 빨간 고리)은 LOA_turk 그대로. 공용 부분은 `shared/sketch.js`.
-- 브레이크스루: LOA와 같은 손그림 8×8. 말은 가는 방향으로 뾰족한 물방울(내 말은 위, 페노피 말은 아래로). 사람이 흑이면 판을 뒤집어 내 쪽이 아래.
+- 판 연출(연필 궤적, 지우개로 지우고 다시 그리기, 잡힌 말 낙서)은 LOA_turk 그대로, `shared/sketch.js`에서 공용으로 쓴다.
+- 브레이크스루: LOA 튀르크와 같은 손그림 8×8. 말은 가는 방향으로 뾰족한 물방울(내 말은 위, 페노피 말은 아래로). 사람이 흑이면 판을 뒤집어 내 쪽이 아래.
 - 말을 기울이거나 뒤집을 때는 SVG 안(`transform` 속성)에서 한다. 말 요소에 CSS `rotate`를 주면 뛰는 애니메이션의 `transform`이 그 회전 안에서
   적용돼 방향이 틀어진다(페노피 말을 180° 돌렸더니 판 밖으로 뛰었음).
-- 백개먼: SVG 한 장(원래 `board-view.js`의 좌표 그대로). 포인트는 펜 삼각형, 하나 걸러 빗금. 체커는 LOA 말처럼 칠한 원.
+- 백개먼: SVG 한 장(원래 `board-view.js`의 좌표 그대로). 포인트는 펜 삼각형, 하나 걸러 빗금. 체커는 LOA 튀르크 말처럼 칠한 원.
   매번 다시 그려도 떨리지 않게 손떨림은 칸 번호로 정한 고정값.
-- 로비 전적: 게임별 전적을 카드에 표시. LOA는 같은 사이트(fishilyfishyfish.github.io)의 LOA 튀르크 전적(`turk-record`)이 있으면 한 번 가져온다.
+- 로비 전적: 게임별 전적을 카드에 표시.
 - `window.__penopi.debug()`는 스모크 테스트용 읽기 전용 핸들.
 
 ## 자주 쓰는 명령
@@ -212,7 +213,7 @@ python3 -m http.server                         # 로컬 확인 (module worker라
 (cd backgammon/engine && cargo test --release)
 python3 tools/check-lines.py                   # pip install fonttools brotli
 node tools/smoke.mjs 20 /tmp/shots             # playwright 필요
-node tools/verify-engines.mjs ../LOA_turk <backgammon 원본 pkg>
+node tools/verify-engines.mjs <backgammon 원본 pkg>
 python3 tools/assemble.py _site                # 배포본 미리 보기
 ```
 
@@ -225,14 +226,13 @@ python3 tools/assemble.py _site                # 배포본 미리 보기
 - 폰트: Gaegu, SIL Open Font License 1.1 (`shared/fonts/OFL.txt`). LOA_turk에서 쓰던 서브셋 그대로.
 - 아이콘·썸네일·캐릭터: 직접 그린 SVG(LOA_turk 아이콘 포함). 아이콘 폰트나 외부 그림은 쓰지 않는다.
 - 규칙 설명은 전부 직접 쓴 문장. 원작자가 알려진 게임은 규칙 시트 맨 아래(`rules.note`)에 만든 사람을 적는다(공식 제품처럼 보이지 않게):
-  LOA = 클로드 수시(Claude Soucie), 브레이크스루 = 댄 트로이카(Dan Troyka, 2000). 체스·국제 드래프트·백개먼은 전통 게임이라 없음.
+  브레이크스루 = 댄 트로이카(Dan Troyka, 2000). 체스·국제 드래프트·백개먼은 전통 게임이라 없음.
 - 엔진: 원래 레포와 같은 조건(palamedes Cargo.toml은 MIT).
 
 ## 성능 기록 (2026-11-12, 이 컨테이너, Chromium headless, `tools/smoke.mjs`)
 
 | 게임 | 페노피 응답 최장 | 비고 |
 |---|---|---|
-| LOA | 2.8초 | 2.5초 생각 + 연출 |
 | 백개먼 | 따로 재지 않음 | 3수 탐색은 원래 레포 기록으로 WASM 평균 0.4초·최대 1.4초, 여기에 말 옮기는 연출 |
 
 WASM 크기: 백개먼 542 KB. 배포본 전체 약 1.8 MB(폰트 0.77 MB 포함).

@@ -1,6 +1,6 @@
 // Breakthrough. The engine (engine.js) was written for this site: alpha-beta search in plain JS, loaded twice,
-// on the page for the rules and in worker.js for thinking (the same arrangement as LOA).
-// Board and doodles follow LOA: a hand-drawn 8×8 grid, hatched squares, pencil trails, scribbled captures.
+// on the page for the rules and in worker.js for thinking (the arrangement LOA 튀르크 used).
+// Board and doodles follow LOA 튀르크: a hand-drawn 8×8 grid, hatched squares, pencil trails, scribbled captures.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';

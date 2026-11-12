@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { loa: 9000, backgammon: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { backgammon: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -95,7 +95,7 @@ async function boardGame(id, sideIdx) {
         if ((await dbg(p)).plies > d.plies) break; // already played (the route was clear)
         await sq(d.cells[l]).click();
       }
-    } else if (id === 'loa' || id === 'breakthrough') { // moves: from | to << 6; a game with a turned board gives d.cells
+    } else if (id === 'breakthrough') { // moves: from | to << 6; a game with a turned board gives d.cells
       const m = d.legal[Math.floor(Math.random() * d.legal.length)], cell = (s) => (d.cells ? d.cells[s] : s);
       await sq(cell(m & 63)).click();
       await sq(cell((m >> 6) & 63)).click();
@@ -146,7 +146,6 @@ async function backgammon(sideIdx) {
   await p.close();
 }
 
-await boardGame('loa', 0);
 await boardGame('breakthrough', 1);
 await boardGame('draughts', 1);
 await boardGame('chess', 1);

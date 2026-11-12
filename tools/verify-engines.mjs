@@ -1,17 +1,16 @@
 // Checks that the engines copied here answer exactly like the original sites' engines.
-//   node tools/verify-engines.mjs <LOA_turk dir> <backgammon pkg dir>
+//   node tools/verify-engines.mjs <backgammon pkg dir>
 // The pkg dir is a WASM build of the original repo (backgammon-palamedes), made the
 // way their own scripts do. For each game, positions from a seeded random game are searched by both engines
 // with the same fixed settings (fixed depth / iterations / seeds, so time doesn't matter) and the moves and
 // evaluations must be identical.
 import fs from 'fs';
 import path from 'path';
-import vm from 'vm';
 import { fileURLToPath } from 'url';
 
 const here = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const [loaDir, bgPkg] = process.argv.slice(2);
-if (!bgPkg) { console.log('usage: node tools/verify-engines.mjs <LOA_turk dir> <backgammon pkg dir>'); process.exit(2); }
+const [bgPkg] = process.argv.slice(2);
+if (!bgPkg) { console.log('usage: node tools/verify-engines.mjs <backgammon pkg dir>'); process.exit(2); }
 let bad = 0;
 const same = (what, a, b) => {
   const ok = JSON.stringify(a) === JSON.stringify(b);
@@ -20,31 +19,6 @@ const same = (what, a, b) => {
 };
 let seed = 12345;
 const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
-
-// ---------- LOA: engine.js (page script) ----------
-function loadLoa(file) {
-  const ctx = {};
-  vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(file, 'utf8') + '\nthis.LoaEngine = LoaEngine; this.W = TUNED_WEIGHTS;', ctx);
-  const E = ctx.LoaEngine({ ttBits: 16 });
-  E.setWeights(ctx.W);
-  return E;
-}
-{
-  const A = loadLoa(path.join(loaDir, 'engine.js')), B = loadLoa(path.join(here, 'loa', 'engine.js'));
-  const moves = [];
-  A.setStart();
-  for (let ply = 0; ply <= 30; ply++) {
-    if (ply % 6 === 0) {
-      const run = (E) => { E.setStart(); for (const m of moves) E.play(m); E.ttClear(); const i = E.think({ depth: 5, clearTT: true }); return [i.move, i.score, i.depth]; };
-      same(`LOA ply ${ply} depth 5`, run(A), run(B));
-    }
-    A.setStart(); for (const m of moves) A.play(m);
-    const legal = A.legalMoves();
-    if (!legal.length) break;
-    moves.push(legal[rnd(legal.length)]);
-  }
-}
 
 // ---------- WASM engines ----------
 async function loadPkg(dir, name) {

@@ -1,8 +1,8 @@
 // Chess. The engine (engine.js) was written for this site: alpha-beta in plain JS, loaded on the page for the
-// rules and in worker.js for thinking (as LOA). Board and doodles follow LOA; the pieces are pen doodles.
+// rules and in worker.js for thinking (as LOA 튀르크 did). Board and doodles follow LOA 튀르크; the pieces are pen doodles.
 // Input: tap a piece, then where it goes. Promotion asks which piece under the board.
 // Penopi plays from a small opening book (book.js) while the game follows one of its lines, and thinks on my
-// time too (short searches of my position fill the worker's table, as LOA does).
+// time too (short searches of my position fill the worker's table, as LOA 튀르크 did).
 import { LINES } from './lines.js';
 import { BOOK } from './book.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';

@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # amazons builds with stable; backgammon has its own pinned toolchain (backgammon/rust-toolchain.toml),
+      # stable installs wasm-bindgen-cli; backgammon has its own pinned toolchain (backgammon/rust-toolchain.toml),
       # which rustup installs on first use.
       - name: Install Rust
         run: |
@@ -32,7 +32,6 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            amazons/engine/target
             backgammon/engine/target
           key: cargo-${{ runner.os }}-${{ hashFiles('*/engine/Cargo.lock', 'backgammon/rust-toolchain.toml') }}
 
@@ -48,7 +47,6 @@ jobs:
 
       - name: Test engines
         run: |
-          (cd amazons/engine && cargo +stable test --locked)
           (cd backgammon/engine && cargo test --release --locked)
 
       - name: Lines fit the font

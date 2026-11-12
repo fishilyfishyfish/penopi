@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { loa: 9000, amazons: 9000, backgammon: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { loa: 9000, backgammon: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -70,7 +70,7 @@ async function waitFor(p, cond, ms) {
   await p.close();
 }
 
-// ---------- LOA and Amazons: tap squares ----------
+// ---------- board games: tap squares ----------
 async function boardGame(id, sideIdx) {
   const { p, errors } = await page(base + id + '/');
   await p.waitForTimeout(800);
@@ -147,7 +147,6 @@ async function backgammon(sideIdx) {
 }
 
 await boardGame('loa', 0);
-await boardGame('amazons', 1);
 await boardGame('breakthrough', 1);
 await boardGame('draughts', 1);
 await boardGame('chess', 1);

@@ -1,6 +1,6 @@
 // Checks that the engines copied here answer exactly like the original sites' engines.
-//   node tools/verify-engines.mjs <LOA_turk dir> <amazons pkg dir> <backgammon pkg dir>
-// The two pkg dirs are WASM builds of the original repos (amazons-hippolyta, backgammon-palamedes), made the
+//   node tools/verify-engines.mjs <LOA_turk dir> <backgammon pkg dir>
+// The pkg dir is a WASM build of the original repo (backgammon-palamedes), made the
 // way their own scripts do. For each game, positions from a seeded random game are searched by both engines
 // with the same fixed settings (fixed depth / iterations / seeds, so time doesn't matter) and the moves and
 // evaluations must be identical.
@@ -10,8 +10,8 @@ import vm from 'vm';
 import { fileURLToPath } from 'url';
 
 const here = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const [loaDir, amzPkg, bgPkg] = process.argv.slice(2);
-if (!bgPkg) { console.log('usage: node tools/verify-engines.mjs <LOA_turk dir> <amazons pkg dir> <backgammon pkg dir>'); process.exit(2); }
+const [loaDir, bgPkg] = process.argv.slice(2);
+if (!bgPkg) { console.log('usage: node tools/verify-engines.mjs <LOA_turk dir> <backgammon pkg dir>'); process.exit(2); }
 let bad = 0;
 const same = (what, a, b) => {
   const ok = JSON.stringify(a) === JSON.stringify(b);
@@ -51,22 +51,6 @@ async function loadPkg(dir, name) {
   const mod = await import(path.resolve(dir, name + '.js'));
   await mod.default({ module_or_path: fs.readFileSync(path.resolve(dir, name + '_bg.wasm')) });
   return mod;
-}
-{
-  const A = await loadPkg(amzPkg, 'amazons_engine'), B = await loadPkg(path.join(here, 'amazons', 'pkg'), 'amazons_engine');
-  const ga = new A.Game(1), gb = new B.Game(1);
-  const hist = [];
-  for (let ply = 0; ply <= 40; ply++) {
-    if (ply % 8 === 0) {
-      const run = (G) => { G.load_history(Uint8Array.from(hist)); G.search_start_seeded(7, 0); G.search_run(1500); const i = JSON.parse(G.search_info(3)); return [i.candidates.map((c) => [c.move, c.visits]), i.value]; };
-      same(`Amazons ply ${ply} MCTS 1500`, run(ga), run(gb));
-    }
-    ga.load_history(Uint8Array.from(hist));
-    const legal = Array.from(ga.legal_moves());
-    if (!legal.length) break;
-    const i = 3 * rnd(legal.length / 3);
-    hist.push(...legal.slice(i, i + 3));
-  }
 }
 {
   const A = await loadPkg(bgPkg, 'palamedes'), B = await loadPkg(path.join(here, 'backgammon', 'pkg'), 'palamedes');

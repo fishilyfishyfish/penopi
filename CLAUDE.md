@@ -7,14 +7,16 @@
 
 - 디자인·캐릭터·대사 방식은 LOA 튀르크(fishilyfishyfish/LOA_turk)를 기준으로 한다. **페노피 = 튀르크, 이름만 다름.**
 - 엔진은 각 게임의 원래 레포에서 가져온 것을 **고치지 않는다.** 이 레포에서는 워커로 감싸기만 한다.
-  원래 레포(LOA_turk, amazons-hippolyta, backgammon-palamedes)는 건드리지 않는다.
+  원래 레포(LOA_turk, backgammon-palamedes)는 건드리지 않는다.
   예외: 브레이크스루, 국제 드래프트, 체스는 원래 레포가 없어서 엔진을 이 레포(`breakthrough/engine.js`, `draughts/engine.js`,
   `chess/engine.js`)에서 새로 만들었다(사용자 요청). 이 셋은 고쳐도 된다.
 - 사이트는 빌드 도구 없이 바닐라 JS + ES 모듈. WASM만 빌드한다(CI가 함).
-- 대국 화면에는 판, 선후공(또는 색) 고르기, 오른쪽 위 "규칙" 버튼만 둔다. 게임 진행에 꼭 필요한 버튼(아마존 취소, 백개먼
+- 대국 화면에는 판, 선후공(또는 색) 고르기, 오른쪽 위 "규칙" 버튼만 둔다. 게임 진행에 꼭 필요한 버튼(체스 승진 고르기, 백개먼
   굴리기·더블·턴 끝내기)은 판 아래 한 줄(`#tray`)에만 둔다. 다른 게임으로 가는 길은 규칙 시트 맨 아래 "다른 게임".
+- **아마존은 지웠다**(사용자 요청, 2026-11-12: 저작권·상표 위험을 원천 차단). 폴더·엔진 복사본·CI·도구에서 모두 뺐고, 코드는 git 기록과
+  원래 레포(amazons-hippolyta)에만 남아 있다. 되살리지 말 것(사용자가 다시 요청하기 전에는).
 - 다시 보기는 넣지 않는다(사용자 결정). 다크 모드는 아직 없다(사용자 결정). 오프라인은 유지.
-- 난이도는 게임마다 최강 하나(튀르크와 같음). 약한 상대(아마존 1–4단계, 백개먼 레이팅 봇)는 엔진에 남아 있지만 화면에는 없다.
+- 난이도는 게임마다 최강 하나(튀르크와 같음). 약한 상대(백개먼 레이팅 봇)는 엔진에 남아 있지만 화면에는 없다.
 - main에 바로 커밋·푸시한다(사용자 지시).
 
 ## 구조
@@ -35,16 +37,15 @@ shared/
   record.js            게임별 전적(localStorage `penopi.<id>.record`), 마지막 방문
   sketch.js            손그림 격자, 연필 궤적, 지우개, 말 뛰기
   offline.js           서비스 워커 등록
-loa/ amazons/ backgammon/ breakthrough/ draughts/ chess/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
+loa/ backgammon/ breakthrough/ draughts/ chess/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
   loa/engine.js              LOA_turk engine.js 그대로 (fb07518)
-  amazons/engine/            amazons-hippolyta engine/ 그대로 (1e742b6, tests/book.rs만 뺌: web/book.json을 읽어서)
   backgammon/engine/         backgammon-palamedes engine/ 그대로 (06492c2), backgammon/rust-toolchain.toml도
   breakthrough/engine.js     이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "브레이크스루 엔진"
   draughts/engine.js         이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "국제 드래프트 엔진"
   chess/engine.js            이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "체스 엔진"
   */pkg/                     WASM 빌드 산출물(커밋 안 함)
 tools/
-  build-wasm.sh        두 엔진 WASM 빌드
+  build-wasm.sh        백개먼 엔진 WASM 빌드
   check-lines.py       화면에 나오는 한글이 전부 폰트 안에 있는지
   smoke.mjs            Chromium으로 로비 + 모든 게임을 실제로 두어 봄(오류, 응답 시간)
   verify-engines.mjs   원래 레포 엔진과 같은 수·같은 평가가 나오는지
@@ -80,7 +81,7 @@ tools/
   - 내 수로 p +15%p 이상이고 p > 60% → `blunder`(내 실수), −20%p 이하 → `selfBlunder`(페노피 실수), −10%p 이하 → `goodMove`.
   - 게임이 `verdict`를 주면 swing 대신 그것을 쓴다(백개먼: 주사위 운 때문에 승률 변화로는 실수를 못 가려서 엔진 2수 분석의 손실 ≥ 0.08로 판정).
   - 그다음 게임 사건(`facts`), p > 85% 처음 → `winning`, p < 20% 처음 → `losing`, 그 외 가끔 `normal`/`normalNodes`/잡담.
-- 승률 p: LOA는 sigmoid(점수/300)(튀르크와 같음), 아마존은 MCTS 루트 값 (v+1)/2, 백개먼은 엔진이 고른 수의 결과 승률,
+- 승률 p: LOA는 sigmoid(점수/300)(튀르크와 같음), 백개먼은 엔진이 고른 수의 결과 승률,
   브레이크스루·국제 드래프트는 sigmoid(점수/200)(말 하나 = 100), 체스는 sigmoid(점수/300)(폰 하나 = 100).
 - 내 수 뒤(`humanMoved`): 게임 사건 → 1.5초 안에 두면 `fast`(30%) → 긴 판 `longGame`.
 - **수에 대한 대사는 다음다음 차례가 시작되면 지운다**(사용자 요청). 내 수에 대한 말은 내 다음 차례가 시작될 때, 페노피 수에 대한 말은
@@ -92,8 +93,8 @@ tools/
 - 내 차례 15초 → 잡담(60%), 40초 → `slow` + 판 위 왕복. 1분 아무 일 없으면 졸기.
 - 끝: 이기면 `engineWin`(게임이 `key`로 더 구체적인 줄을 먼저 시도: 개먼, 포기 등) + 폴짝, 3.5초 뒤 `engineWin2`/`streakBroken`.
   지면 `humanWin`(첫 패배면 `humanWinFirst`) + 가라앉기, 3.5초 뒤 `humanWin2`.
-- 게임 전용 대사 수: LOA 42줄(튀르크에서 옮긴 잡기·두 덩어리·무승부·패스 등 + 새 줄), 아마존 36줄, 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄(잡담 제외).
-  공통 잡담 14주제 + 게임 잡담(chatLoa, chatAmazons, chatBackgammon, chatBreakthrough, chatDraughts, chatChess).
+- 게임 전용 대사 수: LOA 42줄(튀르크에서 옮긴 잡기·두 덩어리·무승부·패스 등 + 새 줄), 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄(잡담 제외).
+  공통 잡담 14주제 + 게임 잡담(chatLoa, chatBackgammon, chatBreakthrough, chatDraughts, chatChess).
   체스에서는 튀르크(체스 자동인형) 얘기가 다시 나온다("1770년부터 체스 뒀어", 켐펠렌, 나폴레옹).
 - 대사·규칙에 쓰는 한글은 Gaegu 서브셋(KS X 1001 2,350자) 안에서만. `python3 tools/check-lines.py`로 확인(CI도 함).
 - 튀르크 대사 중 LOA 얘기(잇기, 덩어리, 커넥트메이트, LOA 잡학)는 `loa/lines.js`로 옮겼고, "1770년"(기계 튀르크)처럼 이름이 바뀌어
@@ -104,7 +105,6 @@ tools/
 | 게임 | 원래 | 워커 | 생각 시간 상한 |
 |---|---|---|---|
 | LOA | LOA_turk `engine.js`(순수 JS, 알파베타) | classic worker, `importScripts('engine.js')`. 페이지에도 엔진을 하나 더 올려 규칙(합법수, 종국) 판단 | 2.5초(튀르크는 5초), 반복 심화라 끊겨도 수가 나옴. 내 차례엔 0.7초씩 미리 생각(튀르크와 같음). 6.5초 넘으면 워커를 죽이고 페이지에서 0.6초 |
-| 아마존 | amazons-hippolyta Rust → WASM, MCTS | module worker, 요청마다 수순 전체를 보내는 무상태 방식. 워커 여러 개(남는 코어, 최대 4)로 루트 병렬 탐색 후 통계 합침(원래 페이지 `combineInfos` 그대로) | 2초(원래 5단계와 같음). 탐색 루프가 JS에서 시간 확인 |
 | 브레이크스루 | 이 레포에서 새로 만듦(`breakthrough/engine.js`, 순수 JS) | LOA와 같은 방식: classic worker + 페이지에도 엔진 하나(규칙 판단) | 2.5초, 반복 심화. 6.5초 넘으면 워커를 죽이고 페이지에서 0.6초. 미리 생각(ponder)은 안 함 |
 | 국제 드래프트 | 이 레포에서 새로 만듦(`draughts/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. ponder 없음 |
 | 체스 | 이 레포에서 새로 만듦(`chess/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. 오프닝 북, 내 차례에 0.7초씩 미리 생각 |
@@ -112,11 +112,8 @@ tools/
 
 - 백개먼은 머니 게임 + 더블링 큐브(매치 없음). 페노피의 큐브 판단은 원래 사이트의 팔라메데스 봇(`ai_cube_json`). 개먼 2배, 백개먼 3배, × 큐브.
   나는 항상 엔진 진영 0(아래, 홈은 오른쪽). 색은 보이는 모양뿐(원래 사이트와 같은 방식). 입력은 원래 사이트의 "바로 이동".
-- 아마존: 한 수 = 이동 + 화살. 상태 줄과 판 아래 ①이동 ②화살 표시, 화살 단계에서는 옮긴 아마존을 도착 칸에 미리 그리고 떠난 칸은 점선.
-  옮긴 아마존을 다시 누르거나 "이동 다시"로 1단계, "취소"/Esc로 선택 해제. 화살 단계에서 엉뚱한 칸을 눌러도 선택이 풀리지 않는다
-  (다른 내 아마존을 누르면 그 아마존으로 다시 시작).
 - 검증(`tools/verify-engines.mjs`, 2026-11-12): 원래 레포를 그 레포 방식대로 빌드한 WASM은 이 레포 빌드와 **바이트 단위로 같다.**
-  무작위 대국 국면에서 LOA 깊이 5 탐색 6국면, 아마존 시드 고정 MCTS 1500회 6국면(후보 수·방문 수·값), 백개먼 6국면
+  무작위 대국 국면에서 LOA 깊이 5 탐색 6국면, 백개먼 6국면
   (팔라메데스 수, 2수 상위 3개 에퀴티, 큐브 판단)이 모두 같았다.
 
 ## 브레이크스루 엔진 (2026-11-12, 사용자 요청으로 새로 만듦)
@@ -199,8 +196,6 @@ tools/
 
 - 페르치(`.perch`)·말풍선·버튼·규칙 시트 CSS는 LOA_turk index.html 그대로 `shared/paper.css`로 옮겼다. 판 CSS는 게임별 `game.css`.
 - LOA 판 연출(연필 궤적, 지우개로 지우고 다시 그리기, 잡힌 말 낙서, 이긴 덩어리 빨간 고리)은 LOA_turk 그대로. 공용 부분은 `shared/sketch.js`.
-- 아마존: 같은 손그림 격자 10×10, 아마존은 작은 왕관, 화살 칸은 촘촘한 교차 빗금 덩어리. 이동 가능 칸은 빨간 점, 화살 칸은 빨간 ×.
-  사람이 흑이면 판을 뒤집어 내 쪽이 아래(원래 사이트와 같음).
 - 브레이크스루: LOA와 같은 손그림 8×8. 말은 가는 방향으로 뾰족한 물방울(내 말은 위, 페노피 말은 아래로). 사람이 흑이면 판을 뒤집어 내 쪽이 아래.
 - 말을 기울이거나 뒤집을 때는 SVG 안(`transform` 속성)에서 한다. 말 요소에 CSS `rotate`를 주면 뛰는 애니메이션의 `transform`이 그 회전 안에서
   적용돼 방향이 틀어진다(페노피 말을 180° 돌렸더니 판 밖으로 뛰었음).
@@ -214,11 +209,10 @@ tools/
 ```sh
 ./tools/build-wasm.sh                          # rustup target add wasm32-unknown-unknown; cargo install wasm-bindgen-cli --version 0.2.129 --locked
 python3 -m http.server                         # 로컬 확인 (module worker라 file:// 불가)
-(cd amazons/engine && cargo test)              # 엔진 테스트
 (cd backgammon/engine && cargo test --release)
 python3 tools/check-lines.py                   # pip install fonttools brotli
 node tools/smoke.mjs 20 /tmp/shots             # playwright 필요
-node tools/verify-engines.mjs ../LOA_turk <amazons 원본 pkg> <backgammon 원본 pkg>
+node tools/verify-engines.mjs ../LOA_turk <backgammon 원본 pkg>
 python3 tools/assemble.py _site                # 배포본 미리 보기
 ```
 
@@ -230,15 +224,14 @@ python3 tools/assemble.py _site                # 배포본 미리 보기
 
 - 폰트: Gaegu, SIL Open Font License 1.1 (`shared/fonts/OFL.txt`). LOA_turk에서 쓰던 서브셋 그대로.
 - 아이콘·썸네일·캐릭터: 직접 그린 SVG(LOA_turk 아이콘 포함). 아이콘 폰트나 외부 그림은 쓰지 않는다.
-- 규칙 설명은 전부 직접 쓴 문장. 아마존 규칙 시트에 상표 문구: "El Juego de las Amazonas는 Ediciones de Mente의 상표입니다."
-- 엔진: 원래 레포와 같은 조건(amazons-engine·palamedes Cargo.toml은 MIT).
+- 규칙 설명은 전부 직접 쓴 문장.
+- 엔진: 원래 레포와 같은 조건(palamedes Cargo.toml은 MIT).
 
 ## 성능 기록 (2026-11-12, 이 컨테이너, Chromium headless, `tools/smoke.mjs`)
 
 | 게임 | 페노피 응답 최장 | 비고 |
 |---|---|---|
 | LOA | 2.8초 | 2.5초 생각 + 연출 |
-| 아마존 | 2.1초 | 2초 × 워커 3개 병렬 |
 | 백개먼 | 따로 재지 않음 | 3수 탐색은 원래 레포 기록으로 WASM 평균 0.4초·최대 1.4초, 여기에 말 옮기는 연출 |
 
-WASM 크기: 아마존 233 KB, 백개먼 542 KB. 배포본 전체 약 1.8 MB(폰트 0.77 MB 포함).
+WASM 크기: 백개먼 542 KB. 배포본 전체 약 1.8 MB(폰트 0.77 MB 포함).

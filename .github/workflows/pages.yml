@@ -76,6 +76,10 @@ jobs:
       - name: Test gomoku engine
         run: node tools/test-gomoku.mjs
 
+      # every move of random games vs a naive implementation, mill/flying/loss rules by hand, strength
+      - name: Test Nine Men's Morris engine
+        run: node tools/test-morris.mjs
+
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright

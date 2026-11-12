@@ -27,6 +27,7 @@ button { font-family: inherit; }
 .stage { --size: max(260px, min(92vw, calc(100vh - 360px), 560px)); min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; }
 .stage.playing { --size: max(260px, min(92vw, calc(100vh - 330px), 620px)); }
 .bar { width: var(--size); max-width: 100%; min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bar .btn { flex: none; white-space: nowrap; } /* a long status line must not squeeze the rules button */
 .status { font-size: 21px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .chip { width: 14px; height: 14px; border-radius: 48% 52% 46% 54%; display: inline-block; flex: none; }
 .chip.b { background: var(--ink); }

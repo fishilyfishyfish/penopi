@@ -66,6 +66,10 @@ jobs:
       - name: Test Breakthrough engine
         run: node tools/test-breakthrough.mjs
 
+      # perft vs published values, every move vs a naive implementation, the capture rules by hand, strength
+      - name: Test draughts engine
+        run: node tools/test-draughts.mjs
+
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright

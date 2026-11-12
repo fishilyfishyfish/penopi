@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { loa: 9000, amazons: 9000, backgammon: 9000, breakthrough: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { loa: 9000, amazons: 9000, backgammon: 9000, breakthrough: 9000, draughts: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -83,7 +83,14 @@ async function boardGame(id, sideIdx) {
     if (k > 0) slowest = Math.max(slowest, turn);
     const d = await dbg(p);
     if (d.over || mine >= MOVES) break;
-    if (id === 'loa' || id === 'breakthrough') { // moves: from | to << 6; a game with a turned board gives d.cells
+    if (id === 'draughts') { // moves: {from, to, path}; tap the piece, the squares on the way, the end
+      const m = d.legal[Math.floor(Math.random() * d.legal.length)];
+      await sq(d.cells[m.from]).click();
+      for (const l of m.path) {
+        if ((await dbg(p)).plies > d.plies) break; // already played (the route was clear)
+        await sq(d.cells[l]).click();
+      }
+    } else if (id === 'loa' || id === 'breakthrough') { // moves: from | to << 6; a game with a turned board gives d.cells
       const m = d.legal[Math.floor(Math.random() * d.legal.length)], cell = (s) => (d.cells ? d.cells[s] : s);
       await sq(cell(m & 63)).click();
       await sq(cell((m >> 6) & 63)).click();
@@ -137,6 +144,7 @@ async function backgammon(sideIdx) {
 await boardGame('loa', 0);
 await boardGame('amazons', 1);
 await boardGame('breakthrough', 1);
+await boardGame('draughts', 1);
 await backgammon(1);
 await browser.close();
 server.close();

@@ -162,7 +162,7 @@ export function boot(game) {
       else if (r < 0.45) chat();
     },
     // the game is over. winner: 'human' | 'penopi' | 'draw'; vars fill the lines ({n} moves etc.);
-    // key: a more specific winning/losing line to try first (e.g. 'engineWinGammon')
+    // key: a more specific line to try first (e.g. 'engineWinGammon', or a draw's reason)
     over({ winner, vars = {}, key, text }) {
       stopTimers(); turnStart = 0;
       pc.thinking(false);
@@ -170,7 +170,7 @@ export function boot(game) {
       if (text) status(text);
       else status(winner === 'draw' ? '무승부' : winner === 'human' ? '내가 이겼다' : `${NAME}가 이겼다`);
       let follow, fv = vars;
-      if (winner === 'draw') { say('draw', vars); }
+      if (winner === 'draw') { if (!(key && say(key, vars))) say('draw', vars); }
       else if (winner === 'human') {
         if (!(key && say(key, vars))) say(rec.human === 1 ? 'humanWinFirst' : 'humanWin', vars);
         follow = 'humanWin2';

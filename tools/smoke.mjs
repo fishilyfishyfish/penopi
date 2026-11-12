@@ -52,7 +52,7 @@ async function waitFor(p, cond, ms) {
   const { p, errors } = await page(base);
   await p.waitForSelector('.card');
   const n = await p.$$eval('.card', (els) => els.length);
-  const games = fs.readFileSync(path.join(root, 'games.js'), 'utf8').match(/\{ id: '/g).length;
+  const games = fs.readFileSync(path.join(root, 'games.js'), 'utf8').match(/^\s*\{ id: '/gm).length; // a commented-out line is a game hidden for now
   if (n !== games) fail(`lobby shows ${n} cards, games.js has ${games}`);
   if (SHOTS) await p.screenshot({ path: path.join(SHOTS, 'lobby.png') });
   if (errors.length) fail('lobby: ' + errors.join(' | '));

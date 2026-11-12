@@ -1,8 +1,9 @@
 // Engine vs engine for chess/engine.js: node tools/arena-chess.mjs <A> <B> [pairs=10]
-// A player: see player() below, e.g. nodes:30000,bishopPair=0 or ms:200,file=/tmp/old-engine.js.
+// A player: see player() below, e.g. nodes:30000,mob=0, ms:200,file=/tmp/old-engine.js or ms:200,params=tuned.json.
 // Each pair starts from the same 2 random opening moves and swaps colours. Prints A's score.
 import { createRequire } from 'module';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const require = createRequire(import.meta.url);
@@ -13,18 +14,19 @@ const pairs = Number(pairsArg || 10);
 let seed = Number(seedArg || 7);
 const rnd = (n) => { seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff; return seed % n; };
 
-// "nodes:N" or "ms:T" (time per move), then ",key=value" weight overrides, or ",file=path" for another engine file
+// "nodes:N" or "ms:T" (time per move), then ",key=value" switches, ",file=path" for another engine file, ",params=x.json" for evaluation parameters
 function player(spec) {
   const [head, ...kv] = spec.split(',');
   const [kind, val] = head.split(':');
   const weights = {};
-  let Engine = ChessEngine;
+  let Engine = ChessEngine, params;
   for (const p of kv) {
     const [k, v] = p.split('=');
     if (k === 'file') Engine = require(path.resolve(v)).ChessEngine;
+    else if (k === 'params') params = JSON.parse(fs.readFileSync(v, 'utf8'));
     else weights[k] = Number(v);
   }
-  const E = Engine({ ttBits: 18, weights });
+  const E = Engine({ ttBits: 18, weights, params });
   const cfg = kind === 'ms' ? { time: Number(val) } : { nodes: Number(val), soft: 1 };
   return (moves) => { E.setStart(); for (const m of moves) E.play(m); return E.think(cfg).move; };
 }

@@ -50,14 +50,20 @@ function ChessEngine(opts) {
   // history of position keys, one per ply played (for repetition)
   const hk1 = new Int32Array(2048), hk2 = new Int32Array(2048);
   let hn = 0;
-  const undo = [];
+  // undo stack (one entry per make / makeNull)
+  const U_SIZE = 2048;
+  const uM = new Int32Array(U_SIZE), uCap = new Int8Array(U_SIZE), uCastle = new Int8Array(U_SIZE), uEp = new Int16Array(U_SIZE), uHalf = new Int16Array(U_SIZE);
+  const uH1 = new Int32Array(U_SIZE), uH2 = new Int32Array(U_SIZE), uPk1 = new Int32Array(U_SIZE), uPk2 = new Int32Array(U_SIZE);
+  let un = 0;
+  // piece lists: squares of each colour's pieces (pawns and king included), kept by addP/delP
+  const plist = [new Int16Array(16), new Int16Array(16)], pcnt = [0, 0], pidx = new Int8Array(128);
   // kept up to date by addP/delP: pieces by code, material + piece-square sums from White's view (middlegame,
   // endgame), game phase, and a key of the pawns alone (for the pawn table)
   const count = new Int8Array(16);
   let mgS = 0, egS = 0, phaseS = 0, pk1 = 0, pk2 = 0;
 
   function rehash() {
-    h1 = 0; h2 = 0; pk1 = 0; pk2 = 0; mgS = 0; egS = 0; phaseS = 0; count.fill(0);
+    h1 = 0; h2 = 0; pk1 = 0; pk2 = 0; mgS = 0; egS = 0; phaseS = 0; count.fill(0); pcnt[0] = pcnt[1] = 0;
     for (let s = 0; s < 128; s++) if (!off(s) && board[s]) { const p = board[s]; board[s] = 0; addP(p, s); }
     h1 ^= ZC1[castle]; h2 ^= ZC2[castle];
     if (ep >= 0) { h1 ^= ZE1[ep]; h2 ^= ZE2[ep]; }
@@ -82,7 +88,7 @@ function ChessEngine(opts) {
     if (cas && cas !== '-') for (const ch of cas) castle |= { K: 1, Q: 2, k: 4, q: 8 }[ch] || 0;
     ep = eps && eps !== '-' ? (Number(eps[1]) - 1) * 16 + (eps.charCodeAt(0) - 97) : -1;
     half = Number(hm || 0); fullmove = Number(fm || 1);
-    hn = 0; undo.length = 0;
+    hn = 0; un = 0;
     rehash();
   }
   function fen() {
@@ -116,35 +122,50 @@ function ChessEngine(opts) {
     return false;
   }
   const inCheck = (c = side) => attacked(kingSq[c >> 3], c ^ 8);
+  // LINE[d + 119]: the 0x88 difference d lies on a queen line (a piece there and the king could be on one ray)
+  const LINE = new Int8Array(239);
+  for (const d of [17, 15, -17, -15, 16, -16, 1, -1]) for (let k = 1; k < 8; k++) LINE[d * k + 119] = 1;
+  // after make(m): did the move leave the mover's king attacked? kq = the mover's king square before the move,
+  // chk = the mover was in check. Only king moves, en passant, moves out of check and moves from a square on a
+  // line with the king can; everything else skips the attack test.
+  // KN_D[d + 119]: a knight jump
+  const KN_D = new Int8Array(239);
+  for (const d of KNIGHT) KN_D[d + 119] = 1;
+  // after make(m): could the move check the side now to move? (a cheap filter before the attack test)
+  function givesCheck(m) {
+    const ek = kingSq[side >> 3], to = mTo(m), from = mFrom(m);
+    if (mFlags(m) & (FLAG_EP | FLAG_CASTLE) || mPromo(m)) return inCheck();
+    if (LINE[from - ek + 119] || LINE[to - ek + 119] || KN_D[to - ek + 119]) return inCheck();
+    return false;
+  }
+  const leftInCheck = (m, kq, chk) => (chk || mFrom(m) === kq || (mFlags(m) & FLAG_EP) || LINE[mFrom(m) - kq + 119]) && inCheck(side ^ 8);
 
   // ---------- move generation (pseudo-legal) ----------
   function gen(list, capturesOnly) {
     let n = 0;
     const us = side, them = side ^ 8;
-    const add = (from, to, flags, promo = 0) => { list[n++] = from | (to << 7) | (promo << 14) | (flags << 17); };
-    for (let s = 0; s < 128; s++) {
-      if (off(s)) { s += 7; continue; }
-      const p = board[s];
-      if (!p || (p & 8) !== us) continue;
+    const pl = plist[us >> 3], pn = pcnt[us >> 3];
+    for (let k = 0; k < pn; k++) {
+      const s = pl[k], p = board[s];
       const t = p & 7;
       if (t === P) {
         const fwd = us === WHITE ? 16 : -16, startRank = us === WHITE ? 1 : 6, lastRank = us === WHITE ? 7 : 0;
         const one = s + fwd;
         if (!off(one) && !board[one]) {
-          if (rankOf(one) === lastRank) { for (const pr of [Q, N, R, B]) add(s, one, 0, pr); }
+          if (rankOf(one) === lastRank) { for (let pr = Q; pr >= N; pr--) list[n++] = s | (one << 7) | (pr << 14); }
           else if (!capturesOnly) {
-            add(s, one, 0);
+            list[n++] = s | (one << 7);
             const two = one + fwd;
-            if (rankOf(s) === startRank && !board[two]) add(s, two, FLAG_DOUBLE);
+            if (rankOf(s) === startRank && !board[two]) list[n++] = s | (two << 7) | ((FLAG_DOUBLE) << 17);
           }
         }
-        for (const d of [fwd - 1, fwd + 1]) {
-          const c = s + d;
+        for (let dd = -1; dd <= 1; dd += 2) {
+          const c = s + fwd + dd;
           if (off(c)) continue;
           if (board[c] && (board[c] & 8) === them) {
-            if (rankOf(c) === lastRank) { for (const pr of [Q, N, R, B]) add(s, c, FLAG_CAP, pr); }
-            else add(s, c, FLAG_CAP);
-          } else if (c === ep) add(s, c, FLAG_CAP | FLAG_EP);
+            if (rankOf(c) === lastRank) { for (let pr = Q; pr >= N; pr--) list[n++] = s | (c << 7) | (pr << 14) | (FLAG_CAP << 17); }
+            else list[n++] = s | (c << 7) | ((FLAG_CAP) << 17);
+          } else if (c === ep) list[n++] = s | (c << 7) | ((FLAG_CAP | FLAG_EP) << 17);
         }
         continue;
       }
@@ -153,16 +174,16 @@ function ChessEngine(opts) {
           const to = s + d;
           if (off(to)) continue;
           const q = board[to];
-          if (!q) { if (!capturesOnly) add(s, to, 0); }
-          else if ((q & 8) === them) add(s, to, FLAG_CAP);
+          if (!q) { if (!capturesOnly) list[n++] = s | (to << 7); }
+          else if ((q & 8) === them) list[n++] = s | (to << 7) | ((FLAG_CAP) << 17);
         }
         if (t === K && !capturesOnly) {
           if (us === WHITE && s === 0x04) {
-            if ((castle & 1) && !board[0x05] && !board[0x06] && !attacked(0x04, them) && !attacked(0x05, them) && !attacked(0x06, them)) add(s, 0x06, FLAG_CASTLE);
-            if ((castle & 2) && !board[0x03] && !board[0x02] && !board[0x01] && !attacked(0x04, them) && !attacked(0x03, them) && !attacked(0x02, them)) add(s, 0x02, FLAG_CASTLE);
+            if ((castle & 1) && !board[0x05] && !board[0x06] && !attacked(0x04, them) && !attacked(0x05, them) && !attacked(0x06, them)) list[n++] = s | (0x06 << 7) | ((FLAG_CASTLE) << 17);
+            if ((castle & 2) && !board[0x03] && !board[0x02] && !board[0x01] && !attacked(0x04, them) && !attacked(0x03, them) && !attacked(0x02, them)) list[n++] = s | (0x02 << 7) | ((FLAG_CASTLE) << 17);
           } else if (us === BLACK && s === 0x74) {
-            if ((castle & 4) && !board[0x75] && !board[0x76] && !attacked(0x74, them) && !attacked(0x75, them) && !attacked(0x76, them)) add(s, 0x76, FLAG_CASTLE);
-            if ((castle & 8) && !board[0x73] && !board[0x72] && !board[0x71] && !attacked(0x74, them) && !attacked(0x73, them) && !attacked(0x72, them)) add(s, 0x72, FLAG_CASTLE);
+            if ((castle & 4) && !board[0x75] && !board[0x76] && !attacked(0x74, them) && !attacked(0x75, them) && !attacked(0x76, them)) list[n++] = s | (0x76 << 7) | ((FLAG_CASTLE) << 17);
+            if ((castle & 8) && !board[0x73] && !board[0x72] && !board[0x71] && !attacked(0x74, them) && !attacked(0x73, them) && !attacked(0x72, them)) list[n++] = s | (0x72 << 7) | ((FLAG_CASTLE) << 17);
           }
         }
         continue;
@@ -171,8 +192,8 @@ function ChessEngine(opts) {
       for (const d of dirs) {
         for (let to = s + d; !off(to); to += d) {
           const q = board[to];
-          if (!q) { if (!capturesOnly) add(s, to, 0); continue; }
-          if ((q & 8) === them) add(s, to, FLAG_CAP);
+          if (!q) { if (!capturesOnly) list[n++] = s | (to << 7); continue; }
+          if ((q & 8) === them) list[n++] = s | (to << 7) | ((FLAG_CAP) << 17);
           break;
         }
       }
@@ -183,6 +204,7 @@ function ChessEngine(opts) {
   // ---------- make / unmake ----------
   function addP(p, sq) {
     board[sq] = p; count[p]++;
+    { const c = p >> 3; pidx[sq] = pcnt[c]; plist[c][pcnt[c]++] = sq; }
     h1 ^= ZP1[p * 128 + sq]; h2 ^= ZP2[p * 128 + sq];
     const t = p & 7, i = p & 8 ? idxB(sq) : idxW(sq);
     if (p & 8) { mgS -= MG[t] + PST_MG[t][i]; egS -= EG[t] + PST_EG[t][i]; } else { mgS += MG[t] + PST_MG[t][i]; egS += EG[t] + PST_EG[t][i]; }
@@ -192,6 +214,7 @@ function ChessEngine(opts) {
   function delP(sq) {
     const p = board[sq];
     board[sq] = 0; count[p]--;
+    { const c = p >> 3, i = pidx[sq], last = plist[c][--pcnt[c]]; plist[c][i] = last; pidx[last] = i; }
     h1 ^= ZP1[p * 128 + sq]; h2 ^= ZP2[p * 128 + sq];
     const t = p & 7, i = p & 8 ? idxB(sq) : idxW(sq);
     if (p & 8) { mgS += MG[t] + PST_MG[t][i]; egS += EG[t] + PST_EG[t][i]; } else { mgS -= MG[t] + PST_MG[t][i]; egS -= EG[t] + PST_EG[t][i]; }
@@ -204,7 +227,7 @@ function ChessEngine(opts) {
     const p = board[from];
     const capSq = fl & FLAG_EP ? (side === WHITE ? to - 16 : to + 16) : to;
     const cap = board[capSq];
-    undo.push({ m, cap, castle, ep, half, h1, h2, pk1, pk2 });
+    uM[un] = m; uCap[un] = cap; uCastle[un] = castle; uEp[un] = ep; uHalf[un] = half; uH1[un] = h1; uH2[un] = h2; uPk1[un] = pk1; uPk2[un] = pk2; un++;
     hk1[hn] = h1; hk2[hn] = h2; hn++;
     if (cap) delP(capSq);
     delP(from);
@@ -227,8 +250,8 @@ function ChessEngine(opts) {
     side ^= 8; h1 ^= ZS1; h2 ^= ZS2;
   }
   function unmake() {
-    const u = undo.pop();
-    const m = u.m, from = mFrom(m), to = mTo(m), fl = mFlags(m), pr = mPromo(m);
+    const u = --un;
+    const m = uM[u], from = mFrom(m), to = mTo(m), fl = mFlags(m), pr = mPromo(m);
     side ^= 8;
     if (side === BLACK) fullmove--;
     const np = delP(to);
@@ -241,19 +264,19 @@ function ChessEngine(opts) {
         addP(delP(rt), rf);
       }
     }
-    if (u.cap) addP(u.cap, fl & FLAG_EP ? (side === WHITE ? to - 16 : to + 16) : to);
-    castle = u.castle; ep = u.ep; half = u.half; h1 = u.h1; h2 = u.h2; pk1 = u.pk1; pk2 = u.pk2;
+    if (uCap[u]) addP(uCap[u], fl & FLAG_EP ? (side === WHITE ? to - 16 : to + 16) : to);
+    castle = uCastle[u]; ep = uEp[u]; half = uHalf[u]; h1 = uH1[u]; h2 = uH2[u]; pk1 = uPk1[u]; pk2 = uPk2[u];
     hn--;
   }
   function makeNull() {
-    undo.push({ m: 0, cap: 0, castle, ep, half, h1, h2 });
+    uM[un] = 0; uCap[un] = 0; uCastle[un] = castle; uEp[un] = ep; uHalf[un] = half; uH1[un] = h1; uH2[un] = h2; un++;
     hk1[hn] = h1; hk2[hn] = h2; hn++;
     if (ep >= 0) { h1 ^= ZE1[ep]; h2 ^= ZE2[ep]; ep = -1; }
     half++; side ^= 8; h1 ^= ZS1; h2 ^= ZS2;
   }
   function unmakeNull() {
-    const u = undo.pop();
-    side ^= 8; ep = u.ep; half = u.half; h1 = u.h1; h2 = u.h2; castle = u.castle;
+    const u = --un;
+    side ^= 8; ep = uEp[u]; half = uHalf[u]; h1 = uH1[u]; h2 = uH2[u]; castle = uCastle[u];
     hn--;
   }
   function legalMoves() {
@@ -292,12 +315,10 @@ function ChessEngine(opts) {
   // tables are written as seen from White, rank 8 at the top (index 0 = a8); black squares are mirrored
   // feature switches (1 on, 0 off) are here too so self-play can measure each: mob, ks (king safety), pp (passed pawn extras),
   // rfp, fut, lmp, iid, asp, qcheck
-  const W = Object.assign({ bishopPair: 30, doubled: 12, isolated: 12, rookOpen: 18, rookHalf: 9, tempo: 10,
-    mob: 1, ks: 1, pp: 1, rfp: 1, fut: 1, lmp: 1, iid: 1, asp: 1, qcheck: 1, ksK: 0.25, ksCap: 150, shield: 1 }, opts.weights || {});
-  const MG = [0, 100, 320, 330, 500, 950, 0], EG = [0, 120, 300, 315, 540, 950, 0];
+  const W = Object.assign({ mob: 1, ks: 1, pp: 1, rfp: 1, fut: 1, lmp: 1, iid: 1, asp: 1, qcheck: 1, shield: 1, cm: 0, hp: 0, raz: 0 }, opts.weights || {});
   const PHASE = [0, 0, 1, 1, 2, 4, 0];
   const T = (rows) => rows.trim().split(/\s+/).map(Number);
-  const PST_MG = [null,
+  const PST_MG0 = [null,
     T(`  0   0   0   0   0   0   0   0
         40  45  45  50  50  45  45  40
         10  12  20  30  30  20  12  10
@@ -347,7 +368,7 @@ function ChessEngine(opts) {
         16  16  -4  -8  -8  -4  16  16
         18  28  10  -2   0   8  30  20`),
   ];
-  const PST_EG = [null,
+  const PST_EG0 = [null,
     T(`  0   0   0   0   0   0   0   0
         80  80  80  80  80  80  80  80
         50  50  50  50  50  50  50  50
@@ -397,15 +418,56 @@ function ChessEngine(opts) {
        -32 -14   0   4   4   0 -14 -32
        -50 -38 -28 -24 -24 -28 -38 -50`),
   ];
+  // tuned values of PV (written by tools/chess-tune.mjs; null = the hand-written starting values)
+  const TUNED = null; // tuned-params
+  // ---------- evaluation parameters ----------
+  // Every number the evaluation uses lives in one Int32Array PV (tools/chess-tune.mjs tunes it from self-play);
+  // the tables the evaluation reads are views into it. The starting values are the hand-written ones above.
+  // PDEF: [name, offset, length, endgame term?]
+  const PDEF = [], PINIT = [];
+  let PN = 0;
+  function prm(name, init, eg) { const o = PN; PDEF.push([name, o, init.length, eg ? 1 : 0]); for (const v of init) PINIT.push(v); PN += init.length; return o; }
+  const lin = (n, f) => Array.from({ length: n }, (_, k) => f(k));
+  const MOB_MID = [0, 0, 4, 6, 7, 13, 0], MOBN = [0, 0, 9, 14, 15, 28, 0], MOB_MG0 = [0, 0, 4, 5, 2, 1, 0], MOB_EG0 = [0, 0, 4, 5, 4, 2, 0];
+  const O = { matMg: prm('material mg', [0, 100, 320, 330, 500, 950, 0]), matEg: prm('material eg', [0, 120, 300, 315, 540, 950, 0], 1), pstMg: [0], pstEg: [0], mobMg: [0, 0], mobEg: [0, 0] };
+  for (let t = 1; t <= 6; t++) { O.pstMg.push(prm('pst mg ' + t, PST_MG0[t])); O.pstEg.push(prm('pst eg ' + t, PST_EG0[t], 1)); }
+  O.doubledMg = prm('doubled mg', [12]); O.doubledEg = prm('doubled eg', [20], 1);
+  O.isoMg = prm('isolated mg', [12]); O.isoEg = prm('isolated eg', [16], 1);
+  O.passMg = prm('passed mg', [0, 5, 10, 16, 28, 48, 75, 0]); O.passEg = prm('passed eg', [0, 12, 20, 36, 60, 95, 145, 0], 1);
+  for (let t = N; t <= Q; t++) {
+    O.mobMg.push(prm('mobility mg ' + t, lin(MOBN[t], (k) => MOB_MG0[t] * (k - MOB_MID[t]))));
+    O.mobEg.push(prm('mobility eg ' + t, lin(MOBN[t], (k) => MOB_EG0[t] * (k - MOB_MID[t])), 1));
+  }
+  O.rookOpenMg = prm('rook open file mg', [18]); O.rookOpenEg = prm('rook open file eg', [9], 1);
+  O.rookHalfMg = prm('rook half-open file mg', [9]); O.rookHalfEg = prm('rook half-open file eg', [4], 1);
+  O.rook7Mg = prm('rook on the 7th mg', [12]); O.rook7Eg = prm('rook on the 7th eg', [24], 1);
+  O.safety = prm('king attack by units', lin(64, (u) => Math.min(150, Math.round(u * u * 0.25))));
+  O.shieldUnit = prm('pawn shield unit', [8]); O.shieldBase = prm('pawn shield base', [-18]);
+  O.pFree = prm('passed pawn free path eg', lin(8, (a) => a * 4), 1);
+  O.pKingEnemy = prm('passed pawn enemy king distance eg', lin(8, (a) => Math.round(5 * a * a / 8)), 1);
+  O.pKingOwn = prm('passed pawn own king distance eg', lin(8, (a) => Math.round(-2 * a * a / 8)), 1);
+  O.bpairMg = prm('bishop pair mg', [30]); O.bpairEg = prm('bishop pair eg', [40], 1);
+  O.tempo = prm('tempo', [10]);
+  const PV = Int32Array.from(PINIT);
+  if (TUNED && TUNED.length === PN) PV.set(TUNED);
+  if (opts.params) PV.set(opts.params);
+  const view = (o, n) => PV.subarray(o, o + n);
+  const MG = view(O.matMg, 7), EG = view(O.matEg, 7), PST_MG = [null], PST_EG = [null], MOBT_MG = [null, null], MOBT_EG = [null, null];
+  for (let t = 1; t <= 6; t++) { PST_MG.push(view(O.pstMg[t], 64)); PST_EG.push(view(O.pstEg[t], 64)); }
+  for (let t = N; t <= Q; t++) { MOBT_MG.push(view(O.mobMg[t], MOBN[t])); MOBT_EG.push(view(O.mobEg[t], MOBN[t])); }
+  const PASSED_MG = view(O.passMg, 8), PASSED_EG = view(O.passEg, 8), SAFETY = view(O.safety, 64);
+  const PFREE = view(O.pFree, 8), PKE = view(O.pKingEnemy, 8), PKO = view(O.pKingOwn, 8);
+  // tracing (features()): the coefficient of each parameter in the evaluation, White's view, before tapering
+  let TR = null, trPhase = 24, trScale = 1;
+
   // index into the tables: a8 = 0 .. h1 = 63 from White's view
   const idxW = (s) => (7 - rankOf(s)) * 8 + fileOf(s), idxB = (s) => rankOf(s) * 8 + fileOf(s);
-  const PASSED_MG = [0, 5, 10, 16, 28, 48, 75, 0], PASSED_EG = [0, 12, 20, 36, 60, 95, 145, 0];
   // pawn structure depends on the pawns alone: kept in a table by pawn key
   // entry: [key1, key2, mg, eg, white file mask, black file mask, passed squares (array)]
   const PT_SIZE = 1 << 14, pawnTable = new Array(PT_SIZE);
   function pawnEntry() {
     const i = pk1 & (PT_SIZE - 1), e = pawnTable[i];
-    if (e && e[0] === pk1 && e[1] === pk2) return e;
+    if (!TR && e && e[0] === pk1 && e[1] === pk2) return e;
     const files = [new Int8Array(8), new Int8Array(8)], lo = [new Int8Array(8).fill(8), new Int8Array(8).fill(8)], hi = [new Int8Array(8).fill(-1), new Int8Array(8).fill(-1)];
     const pawns = [];
     for (let sq = 0; sq < 128; sq++) {
@@ -420,8 +482,8 @@ function ChessEngine(opts) {
     const passed = [];
     for (const sq of pawns) {
       const c = board[sq] >> 3, o = 1 - c, sign = c ? -1 : 1, f = fileOf(sq), r = rankOf(sq);
-      if (files[c][f] > 1) { mg -= sign * W.doubled; eg -= sign * (W.doubled + 8); }
-      if ((f === 0 || !files[c][f - 1]) && (f === 7 || !files[c][f + 1])) { mg -= sign * W.isolated; eg -= sign * (W.isolated + 4); }
+      if (files[c][f] > 1) { mg -= sign * PV[O.doubledMg]; eg -= sign * PV[O.doubledEg]; if (TR) { TR[O.doubledMg] -= sign; TR[O.doubledEg] -= sign; } }
+      if ((f === 0 || !files[c][f - 1]) && (f === 7 || !files[c][f + 1])) { mg -= sign * PV[O.isoMg]; eg -= sign * PV[O.isoEg]; if (TR) { TR[O.isoMg] -= sign; TR[O.isoEg] -= sign; } }
       let free = true;
       for (let ff = Math.max(0, f - 1); ff <= Math.min(7, f + 1) && free; ff++) {
         if (!files[o][ff]) continue;
@@ -430,74 +492,123 @@ function ChessEngine(opts) {
       if (free && !(files[c][f] > 1 && (c === 0 ? hi[c][f] > r : lo[c][f] < r))) { // the front pawn of a doubled pair only
         const adv = c === 0 ? r : 7 - r;
         mg += sign * PASSED_MG[adv]; eg += sign * PASSED_EG[adv];
+        if (TR) { TR[O.passMg + adv] += sign; TR[O.passEg + adv] += sign; }
         passed.push(sq);
       }
     }
     let wf = 0, bf = 0;
     for (let f = 0; f < 8; f++) { if (files[0][f]) wf |= 1 << f; if (files[1][f]) bf |= 1 << f; }
     const ent = [pk1, pk2, mg, eg, wf, bf, passed];
-    pawnTable[i] = ent;
+    if (!TR) pawnTable[i] = ent;
     return ent;
   }
   const dist = (a, b) => Math.max(Math.abs(fileOf(a) - fileOf(b)), Math.abs(rankOf(a) - rankOf(b)));
-  // mobility: squares a piece reaches that aren't own pieces or covered by an enemy pawn, around a typical count
-  const MOB_MG = [0, 0, 4, 5, 2, 1, 0], MOB_EG = [0, 0, 4, 5, 4, 2, 0], MOB_MID = [0, 0, 4, 6, 7, 13, 0];
+  // mobility: squares a piece reaches that aren't own pieces or covered by an enemy pawn (a table by count)
   const ATT_W = [0, 0, 2, 2, 3, 5, 0];                         // king attack units by attacker
-  // penalty by attack units: grows with the square of the attack, capped (scale and cap are weights)
-  const SAFETY = [];
-  for (let u = 0; u < 64; u++) SAFETY.push(Math.min(W.ksCap, Math.round(u * u * W.ksK)));
-  const zone = [new Int8Array(128), new Int8Array(128)];     // squares around each king (by king's colour index)
-  const pawnHit = (sq, by) => by === WHITE // is sq covered by a pawn of colour `by`?
-    ? (!off(sq - 15) && board[sq - 15] === (WHITE | P)) || (!off(sq - 17) && board[sq - 17] === (WHITE | P))
-    : (!off(sq + 15) && board[sq + 15] === (BLACK | P)) || (!off(sq + 17) && board[sq + 17] === (BLACK | P));
+  // penalty by attack units (SAFETY): started as the square of the attack, capped
+  // squares around each king (the king's square, its neighbours and three more in front), by colour and square
+  const ZONE = [[], []];
+  for (let c = 0; c < 2; c++) for (let k = 0; k < 128; k++) {
+    const z = [];
+    if (!off(k)) {
+      const fw = c ? -16 : 16;
+      z.push(k);
+      for (const d of KING) if (!off(k + d)) z.push(k + d);
+      for (const d of [fw - 1, fw, fw + 1]) { const t = k + fw + d; if (!off(t)) z.push(t); }
+    }
+    ZONE[c].push(Int16Array.from(z));
+  }
+  const zone = [new Int8Array(128), new Int8Array(128)];     // marked king zones during evaluate (by colour index)
+  const pawnAtt = [new Int8Array(128), new Int8Array(128)];  // squares covered by each colour's pawns during evaluate
+  const units = [0, 0], attackers = [0, 0];
+  // static evaluations by position key (the same position is evaluated again and again in a search)
+  const EC_SIZE = 1 << 16, ecKey1 = new Int32Array(EC_SIZE), ecKey2 = new Int32Array(EC_SIZE), ecVal = new Int32Array(EC_SIZE);
+  ecKey2[0] = 1; // so the empty slot 0 doesn't match key (0, 0)
   function evaluate() {
+    const ei = h1 & (EC_SIZE - 1);
+    if (ecKey1[ei] === h1 && ecKey2[ei] === h2) return ecVal[ei];
+    const v = evaluateFull();
+    ecKey1[ei] = h1; ecKey2[ei] = h2; ecVal[ei] = v;
+    return v;
+  }
+  function evaluateFull() {
     let mg = mgS, eg = egS;
+    if (TR) for (let c = 0; c < 2; c++) for (let k = 0; k < pcnt[c]; k++) { // material and squares
+      const sq = plist[c][k], t = board[sq] & 7, i = c ? idxB(sq) : idxW(sq), sign = c ? -1 : 1;
+      TR[O.matMg + t] += sign; TR[O.matEg + t] += sign; TR[O.pstMg[t] + i] += sign; TR[O.pstEg[t] + i] += sign;
+    }
     const pe = pawnEntry();
     mg += pe[2]; eg += pe[3];
-    // king zones
+    // mark the king zones and the pawn-covered squares (cleared again below)
     for (let c = 0; c < 2; c++) {
-      const z = zone[c], k = kingSq[c], fw = c ? -16 : 16;
-      z.fill(0);
-      for (const d of KING) if (!off(k + d)) z[k + d] = 1;
-      z[k] = 1;
-      for (const d of [fw - 1, fw, fw + 1]) { const t = k + fw + d; if (!off(t)) z[t] = 1; }
+      const zl = ZONE[c][kingSq[c]], z = zone[c];
+      for (let i = 0; i < zl.length; i++) z[zl[i]] = 1;
+      const pl = plist[c], pa = pawnAtt[c], fw = c ? -16 : 16;
+      for (let i = 0; i < pcnt[c]; i++) {
+        const sq = pl[i];
+        if ((board[sq] & 7) !== P) continue;
+        const a = sq + fw - 1, b2 = sq + fw + 1;
+        if (!off(a)) pa[a] = 1;
+        if (!off(b2)) pa[b2] = 1;
+      }
     }
-    const units = [0, 0], attackers = [0, 0];
-    for (let sq = 0; sq < 128; sq++) {
-      if (off(sq)) { sq += 7; continue; }
-      const p = board[sq], t = p & 7;
+    units[0] = units[1] = attackers[0] = attackers[1] = 0;
+    for (let c = 0; c < 2; c++) {
+      const pl = plist[c], them = c ? WHITE : BLACK, sign = c ? -1 : 1, ez = zone[1 - c], ph = pawnAtt[1 - c];
+      for (let k = 0; k < pcnt[c]; k++) {
+      const sq = pl[k], t = board[sq] & 7;
       if (t < N || t > Q) continue;
-      const c = p >> 3, us = p & 8, them = us ^ 8, sign = c ? -1 : 1, ez = zone[1 - c];
       let mob = 0, hits = 0;
       if (t === N) {
-        for (const d of KNIGHT) {
-          const to = sq + d;
+        for (let i = 0; i < 8; i++) {
+          const to = sq + KNIGHT[i];
           if (off(to)) continue;
           if (ez[to]) hits++;
           const q = board[to];
-          if ((!q || (q & 8) === them) && !pawnHit(to, them)) mob++;
+          if ((!q || (q & 8) === them) && !ph[to]) mob++;
         }
       } else {
         const dirs = t === B ? DIAG : t === R ? ORTH : KING;
-        for (const d of dirs) for (let to = sq + d; !off(to); to += d) {
+        for (let i = 0; i < dirs.length; i++) { const d = dirs[i]; for (let to = sq + d; !off(to); to += d) {
           if (ez[to]) hits++;
           const q = board[to];
-          if (q) { if ((q & 8) === them && !pawnHit(to, them)) mob++; break; }
-          if (!pawnHit(to, them)) mob++;
-        }
+          if (q) { if ((q & 8) === them && !ph[to]) mob++; break; }
+          if (!ph[to]) mob++;
+        } }
       }
-      if (W.mob) { mg += sign * MOB_MG[t] * (mob - MOB_MID[t]); eg += sign * MOB_EG[t] * (mob - MOB_MID[t]); }
+      if (W.mob) { mg += sign * MOBT_MG[t][mob]; eg += sign * MOBT_EG[t][mob]; if (TR) { TR[O.mobMg[t] + mob] += sign; TR[O.mobEg[t] + mob] += sign; } }
       if (hits) { units[c] += ATT_W[t] * hits; attackers[c]++; }
       if (t === R) {
         const f = fileOf(sq), own = c ? pe[5] : pe[4], opp = c ? pe[4] : pe[5];
-        if (!(own & (1 << f))) { const v = opp & (1 << f) ? W.rookHalf : W.rookOpen; mg += sign * v; eg += sign * (v >> 1); }
-        if (rankOf(sq) === (c ? 1 : 6)) { mg += sign * 12; eg += sign * 24; } // rook on the seventh
+        if (!(own & (1 << f))) {
+          const om = opp & (1 << f) ? O.rookHalfMg : O.rookOpenMg, oe = opp & (1 << f) ? O.rookHalfEg : O.rookOpenEg;
+          mg += sign * PV[om]; eg += sign * PV[oe];
+          if (TR) { TR[om] += sign; TR[oe] += sign; }
+        }
+        if (rankOf(sq) === (c ? 1 : 6)) { mg += sign * PV[O.rook7Mg]; eg += sign * PV[O.rook7Eg]; if (TR) { TR[O.rook7Mg] += sign; TR[O.rook7Eg] += sign; } } // rook on the seventh
+      }
+      }
+    }
+    for (let c = 0; c < 2; c++) {
+      const zl = ZONE[c][kingSq[c]], z = zone[c];
+      for (let i = 0; i < zl.length; i++) z[zl[i]] = 0;
+      const pl = plist[c], pa = pawnAtt[c], fw = c ? -16 : 16;
+      for (let i = 0; i < pcnt[c]; i++) {
+        const sq = pl[i];
+        if ((board[sq] & 7) !== P) continue;
+        const a = sq + fw - 1, b2 = sq + fw + 1;
+        if (!off(a)) pa[a] = 0;
+        if (!off(b2)) pa[b2] = 0;
       }
     }
     // king safety (middlegame): attack units on the zone, counted when two or more pieces join and a queen is there
     for (let c = 0; c < 2 && W.ks; c++) {
       const sign = c ? -1 : 1, enemy = 1 - c;
-      if (attackers[enemy] >= 2 && count[(enemy ? BLACK : WHITE) | Q]) mg -= sign * SAFETY[Math.min(63, units[enemy])];
+      if (attackers[enemy] >= 2 && count[(enemy ? BLACK : WHITE) | Q]) {
+        const u = Math.min(63, units[enemy]);
+        mg -= sign * SAFETY[u];
+        if (TR) TR[O.safety + u] -= sign;
+      }
       // pawn shield in front of a king tucked away on the wing
       const k = kingSq[c], f = fileOf(k), r = rankOf(k);
       if ((c === 0 ? r <= 1 : r >= 6) && (f <= 2 || f >= 5)) {
@@ -507,26 +618,28 @@ function ChessEngine(opts) {
           const s1 = k - f + ff + fw, s2 = s1 + fw;
           if (board[s1] === ((c ? BLACK : WHITE) | P)) shield += 2; else if (!off(s2) && board[s2] === ((c ? BLACK : WHITE) | P)) shield += 1;
         }
-        if (W.shield) mg += sign * (shield * 8 - 18);
+        if (W.shield) { mg += sign * (shield * PV[O.shieldUnit] + PV[O.shieldBase]); if (TR) { TR[O.shieldUnit] += sign * shield; TR[O.shieldBase] += sign; } }
       }
     }
     // passed pawns: free path and king distances in the endgame
     if (W.pp) for (const sq of pe[6]) {
       const q = board[sq], c = q >> 3, sign = c ? -1 : 1, adv = c ? 7 - rankOf(sq) : rankOf(sq);
       const fw = c ? -16 : 16, promo = c ? fileOf(sq) : 0x70 + fileOf(sq);
-      if (!board[sq + fw]) eg += sign * (adv * 4);
-      const w = adv * adv;
-      eg += sign * Math.round((dist(kingSq[1 - c], promo) * 5 - dist(kingSq[c], promo) * 2) * w / 8);
+      if (!board[sq + fw]) { eg += sign * PFREE[adv]; if (TR) TR[O.pFree + adv] += sign; }
+      const de = dist(kingSq[1 - c], promo), dw = dist(kingSq[c], promo);
+      eg += sign * (de * PKE[adv] + dw * PKO[adv]);
+      if (TR) { TR[O.pKingEnemy + adv] += sign * de; TR[O.pKingOwn + adv] += sign * dw; }
     }
-    if (count[WHITE | B] >= 2) { mg += W.bishopPair; eg += W.bishopPair + 10; }
-    if (count[BLACK | B] >= 2) { mg -= W.bishopPair; eg -= W.bishopPair + 10; }
+    const bp = (count[WHITE | B] >= 2 ? 1 : 0) - (count[BLACK | B] >= 2 ? 1 : 0);
+    if (bp) { mg += bp * PV[O.bpairMg]; eg += bp * PV[O.bpairEg]; if (TR) { TR[O.bpairMg] += bp; TR[O.bpairEg] += bp; } }
     const phase = phaseS > 24 ? 24 : phaseS;
-    let sc = ((mg * phase + eg * (24 - phase)) / 24) | 0;
+    let sc = ((mg * phase + eg * (24 - phase)) / 24) | 0, scale = 1;
     // drawish material: no pawns and a minor piece up at most
-    if (!count[WHITE | P] && sc > 0 && count[WHITE | N] + count[WHITE | B] <= 1 && !count[WHITE | R] && !count[WHITE | Q]) sc >>= 3;
-    if (!count[BLACK | P] && sc < 0 && count[BLACK | N] + count[BLACK | B] <= 1 && !count[BLACK | R] && !count[BLACK | Q]) sc >>= 3;
+    if (!count[WHITE | P] && sc > 0 && count[WHITE | N] + count[WHITE | B] <= 1 && !count[WHITE | R] && !count[WHITE | Q]) { sc >>= 3; scale = 0.125; }
+    if (!count[BLACK | P] && sc < 0 && count[BLACK | N] + count[BLACK | B] <= 1 && !count[BLACK | R] && !count[BLACK | Q]) { sc >>= 3; scale = 0.125; }
+    if (TR) { trPhase = phase; trScale = scale; TR[O.tempo] += side === WHITE ? 1 : -1; }
     sc = side === WHITE ? sc : -sc;
-    return sc + W.tempo;
+    return sc + PV[O.tempo];
   }
 
   // ---------- transposition table ----------
@@ -585,6 +698,7 @@ function ChessEngine(opts) {
   const MV = [], SC = [], QT = [];
   for (let i = 0; i < MAXPLY + 8; i++) { MV.push(new Int32Array(256)); SC.push(new Int32Array(256)); QT.push(new Int32Array(256)); }
   const KIL = new Int32Array((MAXPLY + 8) * 2), HIST = new Int32Array(16 * 128);
+  const CM = new Int32Array(16 * 128); // countermove: the quiet move that last refuted (piece, square) of the move before
   const LMR = [];
   for (let d = 0; d < 64; d++) { LMR.push(new Int8Array(64)); for (let i = 1; i < 64; i++) LMR[d][i] = d && i ? Math.floor(0.6 + Math.log(d) * Math.log(i) / 2.2) : 0; }
   const RFP_MARGIN = 85, FUT_MARGIN = [0, 110, 210, 310], LMP = [0, 5, 8, 13, 20];
@@ -594,7 +708,7 @@ function ChessEngine(opts) {
     return stopped;
   }
   function score(n, p, ttMove) {
-    const ms = MV[p], sc = SC[p];
+    const ms = MV[p], sc = SC[p], pm = un > 0 ? uM[un - 1] : 0, cmMove = pm ? CM[board[mTo(pm)] * 128 + mTo(pm)] : 0;
     for (let i = 0; i < n; i++) {
       const m = ms[i];
       let v;
@@ -606,6 +720,7 @@ function ChessEngine(opts) {
       } else if (mPromo(m)) v = mPromo(m) === Q ? (1 << 28) + 50 : -(1 << 21);
       else if (m === KIL[p * 2]) v = 1 << 27;
       else if (m === KIL[p * 2 + 1]) v = (1 << 27) - 1;
+      else if (W.cm && m === cmMove) v = (1 << 27) - 2;
       else v = HIST[board[mFrom(m)] * 128 + mTo(m)];
       sc[i] = v;
     }
@@ -626,6 +741,7 @@ function ChessEngine(opts) {
     if (timeUp()) return 0;
     if (p >= MAXPLY) return evaluate();
     const check = W.qcheck && qd < 4 && inCheck(); // evasions near the leaves: so mates at the horizon are seen
+    const realCheck = W.qcheck && qd < 4 ? check : inCheck(), kq = kingSq[side >> 3];
     let best = -INF, n;
     if (check) n = gen(MV[p], false);
     else {
@@ -644,7 +760,7 @@ function ChessEngine(opts) {
         if (SC[p][i] < 0) continue; // a losing capture
       }
       make(m);
-      if (inCheck(side ^ 8)) { unmake(); continue; }
+      if (leftInCheck(m, kq, realCheck)) { unmake(); continue; }
       legal++; ply++;
       const sc = -qsearch(-beta, -alpha, p + 1, qd + 1);
       ply--; unmake();
@@ -682,6 +798,12 @@ function ChessEngine(opts) {
     const ev = check ? -INF : evaluate();
     // reverse futility: far above beta with little depth left, the opponent won't let this happen anyway
     if (W.rfp && !pv && !check && depth <= 6 && Math.abs(beta) < MATE_BOUND && ev - RFP_MARGIN * depth >= beta) return ev;
+    // razoring: hopelessly below alpha near the leaves: see whether a capture rescues it, else give up here
+    if (W.raz && !pv && !check && depth <= 2 && ev + 280 * depth <= alpha) {
+      const q = qsearch(alpha, alpha + 1, p, 0);
+      if (stopped) return 0;
+      if (q <= alpha) return q;
+    }
     // null move: give the opponent a free move; if we're still above beta, this node is good enough
     if (!pv && !check && nullOk && depth >= 3 && hasPieces(side) && ev >= beta) {
       makeNull(); ply++;
@@ -699,18 +821,20 @@ function ChessEngine(opts) {
     const n = gen(MV[p], false);
     score(n, p, ttMove);
     const futile = W.fut && !pv && !check && depth <= 3 && ev + FUT_MARGIN[depth] <= alpha;
-    const a0 = alpha, qt = QT[p];
+    const a0 = alpha, qt = QT[p], kq = kingSq[side >> 3];
     let best = -INF, bestMove = 0, legal = 0, quiets = 0;
     for (let i = 0; i < n; i++) {
       const m = pick(n, p, i);
       const quiet = !(mFlags(m) & FLAG_CAP) && !mPromo(m);
       make(m);
-      if (inCheck(side ^ 8)) { unmake(); continue; }
+      if (leftInCheck(m, kq, check)) { unmake(); continue; }
       legal++;
-      const gives = inCheck();
+      const gives = givesCheck(m);
       if (quiet && !gives && legal > 1 && best > -MATE_BOUND) {
         // futility and late move pruning: quiet moves that can't plausibly lift alpha at the frontier
         if (futile || (W.lmp && !pv && !check && depth <= 4 && quiets >= LMP[depth])) { unmake(); quiets++; continue; }
+        // a quiet move that has kept failing elsewhere, near the leaves
+        if (W.hp && !pv && !check && depth <= 3 && HIST[board[mTo(m)] * 128 + mTo(m)] < -1500 * depth) { unmake(); quiets++; continue; }
       }
       if (quiet) qt[quiets++] = m;
       ply++;
@@ -736,6 +860,7 @@ function ChessEngine(opts) {
       if (alpha >= beta) {
         if (quiet) {
           if (KIL[p * 2] !== m) { KIL[p * 2 + 1] = KIL[p * 2]; KIL[p * 2] = m; }
+          if (un > 0 && uM[un - 1]) { const pm = uM[un - 1]; CM[board[mTo(pm)] * 128 + mTo(pm)] = m; }
           const bonus = Math.min(depth * depth * 16, 1600);
           histAdd(board[mFrom(m)] * 128 + mTo(m), bonus);
           for (let j = 0; j < quiets - 1; j++) { const x = qt[j]; histAdd(board[mFrom(x)] * 128 + mTo(x), -bonus); }
@@ -791,11 +916,11 @@ function ChessEngine(opts) {
 
   // ---------- for the page ----------
   function perft(d) {
-    const list = new Int32Array(256), n = gen(list, false);
+    const list = new Int32Array(256), n = gen(list, false), kq = kingSq[side >> 3], chk = inCheck();
     let total = 0;
     for (let i = 0; i < n; i++) {
       make(list[i]);
-      if (!inCheck(side ^ 8)) total += d <= 1 ? 1 : perft(d - 1);
+      if (!leftInCheck(list[i], kq, chk)) total += d <= 1 ? 1 : perft(d - 1);
       unmake();
     }
     return total;
@@ -825,6 +950,22 @@ function ChessEngine(opts) {
   }
   const uci = (m) => sqName(mFrom(m)) + sqName(mTo(m)) + (mPromo(m) ? ' nbrq'[mPromo(m) - 1] : '');
   function play(m) { make(m); }
+  // the evaluation as a linear function of PV, White's view: value ≈ Σ coef[k] × PV[idx[k]] (up to rounding)
+  function features() {
+    TR = new Float64Array(PN);
+    const v = evaluateFull(), tr = TR;
+    TR = null;
+    const idx = [], coef = [];
+    for (const [name, o, n, egTerm] of PDEF) for (let k = o; k < o + n; k++) {
+      if (!tr[k]) continue;
+      idx.push(k);
+      coef.push(k === O.tempo ? tr[k] : tr[k] * (egTerm ? 24 - trPhase : trPhase) / 24 * trScale);
+      void name;
+    }
+    return { idx, coef, value: side === WHITE ? v : -v };
+  }
+  // quiescence score of the current position (for picking quiet positions when tuning the evaluation)
+  function qscore() { nodes = 0; stopped = false; deadline = 0; maxNodes = 0; ply = 0; return qsearch(-INF, INF, 0, 0); }
   function piecesOf(c) { // material count by type for the colour, for the page's remarks
     const n = [0, 0, 0, 0, 0, 0, 0];
     for (let s = 0; s < 128; s++) { if (off(s)) { s += 7; continue; } const p = board[s]; if (p && (p & 8) === c) n[p & 7]++; }
@@ -834,7 +975,7 @@ function ChessEngine(opts) {
   setFen(START_FEN);
   return {
     WHITE, BLACK, P, N, B, R, Q, K, MATE, MATE_BOUND, FLAG_CAP, FLAG_EP, FLAG_CASTLE, FLAG_DOUBLE, START_FEN,
-    setFen, fen, setStart() { setFen(START_FEN); }, legalMoves, play, think, evaluate, perft, san, uci, status, inCheck, ttClear,
+    setFen, fen, setStart() { setFen(START_FEN); }, legalMoves, play, think, evaluate, qscore, features, PDEF, params: () => PV.slice(), perft, san, uci, status, inCheck, ttClear,
     mFrom, mTo, mPromo, mFlags, sqName, piecesOf,
     get side() { return side; }, get board() { return board; }, get kings() { return kingSq.slice(); },
   };

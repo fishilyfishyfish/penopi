@@ -6,10 +6,12 @@
 - **LOA** (Lines of Action): 내 말을 전부 한 덩어리로 이으면 이긴다.
 - **아마존**: 아마존을 옮기고 화살을 쏴서 칸을 막는다. 둘 데가 없으면 진다.
 - **백개먼**: 주사위 굴려 먼저 다 빼면 이긴다. 더블링 큐브 포함.
+- **브레이크스루**: 말은 앞으로만 간다. 하나라도 상대 끝 줄에 닿으면 이긴다.
 
 페노피는 언제나 최강으로 둔다. 엔진은 각각 [LOA_turk](https://github.com/fishilyfishyfish/LOA_turk),
 [amazons-hippolyta](https://github.com/fishilyfishyfish/amazons-hippolyta),
 [backgammon-palamedes](https://github.com/fishilyfishyfish/backgammon-palamedes)의 것을 그대로 가져왔다.
+브레이크스루 엔진은 이 레포에서 새로 만들었다(`breakthrough/engine.js`).
 
 ## 열기
 

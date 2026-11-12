@@ -62,6 +62,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      # rules (vs a naive implementation), forced-win search (vs a plain solver), strength (vs random/greedy)
+      - name: Test Breakthrough engine
+        run: node tools/test-breakthrough.mjs
+
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright

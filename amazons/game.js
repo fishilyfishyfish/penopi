@@ -254,9 +254,10 @@ const centre = (sq) => { const v = visualOf(sq); return [(v % 10) * 100 + 50, Ma
 // a little crown, wobbled per square so no two look quite the same
 function amazonSvg(colour, sq, extra = '') {
   const k = ((sq * 37) % 7) - 3;
-  return `<svg class="amz ${colorCls(colour)} ${extra}" viewBox="0 0 40 40" aria-hidden="true" style="rotate:${k * 2}deg">
+  // tilted inside the svg: a CSS rotate on the svg would bend the hop animation's direction too
+  return `<svg class="amz ${colorCls(colour)} ${extra}" viewBox="0 0 40 40" aria-hidden="true"><g transform="rotate(${k * 2} 20 20)">
     <path class="body" d="M7 33 L5.5 13 L13.5 21 L20 7.5 L26.5 21 L34.5 12.5 L33 33 Z"/>
-    <path class="band" fill="none" d="M9 28.5 C16 27 24 27.5 31 28.5"/></svg>`;
+    <path class="band" fill="none" d="M9 28.5 C16 27 24 27.5 31 28.5"/></g></svg>`;
 }
 function build() {
   boardEl.setAttribute('role', 'grid');

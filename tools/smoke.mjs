@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { loa: 9000, amazons: 9000, backgammon: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { loa: 9000, amazons: 9000, backgammon: 9000, breakthrough: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -78,15 +78,15 @@ async function boardGame(id, sideIdx) {
   const sq = (i) => p.locator('#board button').nth(i);
   let mine = 0, slowest = 0;
   for (let k = 0; k < MOVES * 2; k++) {
-    const turn = await waitFor(p, async () => { const d = await dbg(p); return d.over || (d.legal.length && (id === 'loa' ? d.stm === d.human : d.side === d.human)); }, ENGINE_CAP[id] + 3000);
+    const turn = await waitFor(p, async () => { const d = await dbg(p); return d.over || (d.legal.length && ('stm' in d ? d.stm === d.human : d.side === d.human)); }, ENGINE_CAP[id] + 3000);
     if (turn < 0) { fail(`${id}: no turn for me after ${ENGINE_CAP[id] + 3000} ms`); break; }
     if (k > 0) slowest = Math.max(slowest, turn);
     const d = await dbg(p);
     if (d.over || mine >= MOVES) break;
-    if (id === 'loa') {
-      const m = d.legal[Math.floor(Math.random() * d.legal.length)];
-      await sq(m & 63).click();
-      await sq((m >> 6) & 63).click();
+    if (id === 'loa' || id === 'breakthrough') { // moves: from | to << 6; a game with a turned board gives d.cells
+      const m = d.legal[Math.floor(Math.random() * d.legal.length)], cell = (s) => (d.cells ? d.cells[s] : s);
+      await sq(cell(m & 63)).click();
+      await sq(cell((m >> 6) & 63)).click();
     } else {
       const i = 3 * Math.floor(Math.random() * (d.legal.length / 3));
       const [f, t, a] = d.legal.slice(i, i + 3);
@@ -96,7 +96,7 @@ async function boardGame(id, sideIdx) {
       await sq(d.cells[a]).click();
     }
     mine++;
-    await waitFor(p, async () => { const e = await dbg(p); return e.over || (e.plies > d.plies && (id === 'loa' ? e.stm : e.side) !== d.human); }, 3000);
+    await waitFor(p, async () => { const e = await dbg(p); return e.over || (e.plies > d.plies && ('stm' in e ? e.stm : e.side) !== d.human); }, 3000);
   }
   if (slowest > ENGINE_CAP[id]) fail(`${id}: Penopi took ${slowest} ms`);
   const d = await dbg(p);
@@ -136,6 +136,7 @@ async function backgammon(sideIdx) {
 
 await boardGame('loa', 0);
 await boardGame('amazons', 1);
+await boardGame('breakthrough', 1);
 await backgammon(1);
 await browser.close();
 server.close();

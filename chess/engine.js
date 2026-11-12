@@ -315,7 +315,7 @@ function ChessEngine(opts) {
   // tables are written as seen from White, rank 8 at the top (index 0 = a8); black squares are mirrored
   // feature switches (1 on, 0 off) are here too so self-play can measure each: mob, ks (king safety), pp (passed pawn extras),
   // rfp, fut, lmp, iid, asp, qcheck
-  const W = Object.assign({ mob: 1, ks: 1, pp: 1, rfp: 1, fut: 1, lmp: 1, iid: 1, asp: 1, qcheck: 1, shield: 1, cm: 0, hp: 0, raz: 0 }, opts.weights || {});
+  const W = Object.assign({ mob: 1, ks: 1, pp: 1, rfp: 1, fut: 1, lmp: 1, iid: 1, asp: 1, qcheck: 1, shield: 1, cm: 1, hp: 0, raz: 1 }, opts.weights || {});
   const PHASE = [0, 0, 1, 1, 2, 4, 0];
   const T = (rows) => rows.trim().split(/\s+/).map(Number);
   const PST_MG0 = [null,

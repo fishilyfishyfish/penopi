@@ -448,8 +448,13 @@ function ChessEngine(opts) {
   O.pKingOwn = prm('passed pawn own king distance eg', lin(8, (a) => Math.round(-2 * a * a / 8)), 1);
   O.bpairMg = prm('bishop pair mg', [30]); O.bpairEg = prm('bishop pair eg', [40], 1);
   O.tempo = prm('tempo', [10]);
+  // opening terms (added after the first tuning: new parameters go at the end so TUNED stays valid)
+  O.undev = prm('minor piece still at home mg', [0]);
+  O.earlyQueen = prm('queen out with two minors at home mg', [0]);
+  O.kingCenter = prm('king on d/e file without castling rights mg', [0]);
+  O.castleRight = prm('castling right kept mg', [0]);
   const PV = Int32Array.from(PINIT);
-  if (TUNED && TUNED.length === PN) PV.set(TUNED);
+  if (TUNED) PV.set(TUNED.slice(0, PN));
   if (opts.params) PV.set(opts.params);
   const view = (o, n) => PV.subarray(o, o + n);
   const MG = view(O.matMg, 7), EG = view(O.matEg, 7), PST_MG = [null], PST_EG = [null], MOBT_MG = [null, null], MOBT_EG = [null, null];
@@ -629,6 +634,20 @@ function ChessEngine(opts) {
       const de = dist(kingSq[1 - c], promo), dw = dist(kingSq[c], promo);
       eg += sign * (de * PKE[adv] + dw * PKO[adv]);
       if (TR) { TR[O.pKingEnemy + adv] += sign * de; TR[O.pKingOwn + adv] += sign * dw; }
+    }
+    // opening: development, an early queen, the king stuck in the middle
+    for (let c = 0; c < 2; c++) {
+      const sign = c ? -1 : 1, base = c ? 0x70 : 0, col = c ? BLACK : WHITE;
+      let home = 0;
+      if (board[base + 1] === (col | N)) home++;
+      if (board[base + 6] === (col | N)) home++;
+      if (board[base + 2] === (col | B)) home++;
+      if (board[base + 5] === (col | B)) home++;
+      if (home) { mg -= sign * home * PV[O.undev]; if (TR) TR[O.undev] -= sign * home; }
+      if (home >= 2 && count[col | Q] && board[base + 3] !== (col | Q)) { mg -= sign * PV[O.earlyQueen]; if (TR) TR[O.earlyQueen] -= sign; }
+      const rights = c ? castle & 12 : castle & 3, kf = fileOf(kingSq[c]);
+      if (rights) { mg += sign * PV[O.castleRight]; if (TR) TR[O.castleRight] += sign; }
+      else if ((kf === 3 || kf === 4) && count[(col ^ 8) | Q]) { mg -= sign * PV[O.kingCenter]; if (TR) TR[O.kingCenter] -= sign; }
     }
     const bp = (count[WHITE | B] >= 2 ? 1 : 0) - (count[BLACK | B] >= 2 ? 1 : 0);
     if (bp) { mg += bp * PV[O.bpairMg]; eg += bp * PV[O.bpairEg]; if (TR) { TR[O.bpairMg] += bp; TR[O.bpairEg] += bp; } }

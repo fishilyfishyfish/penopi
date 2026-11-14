@@ -74,11 +74,13 @@ function sanOf(fen) { E.setFen(fen); return E.legalMoves().map((m) => E.san(m)).
 
 // ---------- the opening book: every line legal ----------
 {
-  const { BOOK } = await import(path.join(root, 'chess', 'book.js'));
+  const { BOOK, parseLine } = await import(path.join(root, 'chess', 'book.js'));
   let moves = 0;
+  const seen = new Set();
   for (const line of BOOK) {
+    check(!seen.has(line), `book: duplicate line ${line}`); seen.add(line);
     E.setStart();
-    for (const tok of line.split(' ')) {
+    for (const tok of parseLine(line).sans) {
       const m = E.legalMoves().find((x) => E.san(x).replace(/[+#]/g, '') === tok.replace(/[+#]/g, ''));
       check(m !== undefined, `book: ${tok} is not legal in ${line}`);
       if (m === undefined) break;

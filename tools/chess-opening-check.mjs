@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 const require = createRequire(import.meta.url);
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const { ChessEngine } = require(path.join(root, 'chess', 'engine.js'));
-const { BOOK } = await import(path.join(root, 'chess', 'book.js'));
+const { BOOK, parseLine } = await import(path.join(root, 'chess', 'book.js'));
 const [gamesArg, msArg, eloArg, seedArg, pliesArg] = process.argv.slice(2);
 const GAMES = Number(gamesArg || 10), MS = Number(msArg || 2500), ELO = Number(eloArg || 1600), PLIES = Number(pliesArg || 30);
 let seed = Number(seedArg || 1);
@@ -56,12 +56,15 @@ async function evalPos(sf, moves) {
 const R0 = ChessEngine({ ttBits: 8 }), book = new Map();
 const posKey = (fen) => fen.split(' ').slice(0, 4).join(' ');
 for (const line of BOOK) {
+  const { only, sans } = parseLine(line);
   R0.setStart();
-  for (const san of line.split(' ')) {
-    const m = R0.legalMoves().find((x) => R0.san(x) === san);
-    const k = posKey(R0.fen());
-    if (!book.has(k)) book.set(k, new Set());
-    book.get(k).add(m);
+  for (const san of sans) {
+    const m = R0.legalMoves().find((x) => R0.san(x).replace(/[+#]/g, '') === san.replace(/[+#]/g, ''));
+    if (!only || only === (R0.side === 0 ? 'w' : 'b')) {
+      const k = posKey(R0.fen());
+      if (!book.has(k)) book.set(k, new Set());
+      book.get(k).add(m);
+    }
     R0.play(m);
   }
 }

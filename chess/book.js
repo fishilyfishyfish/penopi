@@ -1,7 +1,14 @@
-// A small opening book for Penopi: main lines of common openings, in SAN from the starting position.
-// While the game is still inside one of these lines Penopi picks among the book moves for the position
-// (any line that reaches it, so transpositions count), otherwise it thinks. tools/test-chess.mjs checks
-// that every move here is legal.
+// Penopi's opening book: main lines of common openings and the usual sidelines, in SAN from the starting
+// position. While the game is still inside these lines Penopi picks among the book moves for the position
+// (any line that reaches it, so transpositions count), otherwise it thinks. A line marked "w:" or "b:" is
+// only followed for that side: Penopi plays that side's moves and merely expects the other side's (offbeat
+// or doubtful choices it should answer well but not play itself). tools/test-chess.mjs checks that every
+// move here is legal.
+// parseLine(line) → { only: 'w' | 'b' | null, sans: [...] }
+export function parseLine(line) {
+  const m = /^([wb]):\s*/.exec(line);
+  return { only: m ? m[1] : null, sans: (m ? line.slice(m[0].length) : line).trim().split(/\s+/) };
+}
 export const BOOK = [
   // 1.e4 e5
   'e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6 O-O f6 d4 exd4 Nxd4 c5 Nb3 Qxd1 Rxd1',
@@ -91,4 +98,133 @@ export const BOOK = [
   'c4 Nf6 Nc3 e6 e4 d5 e5 d4 exf6 dxc3 bxc3 Qxf6',
   'Nf3 d5 g3 Nf6 Bg2 e6 O-O Be7 d3 O-O Nbd2 c5',
   'Nf3 Nf6 c4 g6 Nc3 Bg7 e4 d6 d4 O-O Be2 e5',
+  // ---------- sidelines (added 2026-11-14: Penopi was leaving the book too early) ----------
+  // 1.e4 e5: Italian with d3, Two Knights 4.d3, Ruy Lopez with d3, Four Knights, Scotch 4...Nf6
+  'e4 e5 Nf3 Nc6 Bc4 Bc5 c3 Nf6 d3 d6 O-O O-O a4 a5 Re1 h6 Nbd2 Be6',
+  'e4 e5 Nf3 Nc6 Bc4 Bc5 O-O Nf6 d3 d6 c3 O-O Re1 a6 Bb3 Ba7 h3 h6 Nbd2 Re8',
+  'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Bc5 c3 d6 O-O O-O Bb3 a6 Nbd2 Ba7 h3 h6',
+  'e4 e5 Nf3 Nc6 Bc4 Nf6 d3 Be7 O-O O-O Re1 d6 a4 Na5 Ba2 c5',
+  'e4 e5 Nf3 Nc6 Bb5 Nf6 d3 Bc5 c3 O-O O-O d6 h3 a6 Ba4 Ba7 Re1 Ne7',
+  'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 d3 b5 Bb3 Be7 O-O d6 c3 O-O Re1 Na5 Bc2 c5',
+  'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Na5 Bc2 c5 d4 Qc7 Nbd2 cxd4 cxd4',
+  'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 d6 c3 Bd7 d4 Nge7 O-O Ng6 Re1 Be7',
+  'e4 e5 Nf3 Nc6 Nc3 Nf6 Bb5 Bb4 O-O O-O d3 d6 Bg5 Bxc3 bxc3 Qe7 Re1 Nd8 d4 Ne6',
+  'e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Nf6 Nc3 Bb4 Nxc6 bxc6 Bd3 d5 exd5 cxd5 O-O O-O Bg5 c6',
+  'e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Bc5 Nxc6 Qf6 Qd2 dxc6 Nc3 Be6 Na4 Rd8 Bd3 Bd4',
+  'e4 e5 Nf3 Nf6 d4 Nxe4 Bd3 d5 Nxe5 Nd7 Nxd7 Bxd7 O-O Bd6 c4 c6',
+  'e4 e5 Nf3 d6 d4 exd4 Nxd4 Nf6 Nc3 Be7 Bf4 O-O Qd2 a6 O-O-O',
+  // White's sidelines against 1...e5: Penopi answers them as Black
+  'b: e4 e5 Bc4 Nf6 d3 c6 Nf3 d5 Bb3 Bd6 Nc3 dxe4 Ng5 O-O Ngxe4 Nxe4 Nxe4 Bc7',
+  'b: e4 e5 d4 exd4 Qxd4 Nc6 Qe3 Nf6 Nc3 Bb4 Bd2 O-O O-O-O Re8',
+  'b: e4 e5 f4 exf4 Nf3 d6 d4 g5 h4 g4 Ng1 Nf6',
+  'b: e4 e5 f4 d5 exd5 exf4 Nf3 Nf6 c4 c6 d4 cxd5',
+  'b: e4 e5 Nc3 Nf6 Bc4 Nxe4 Qh5 Nd6 Bb3 Nc6 Nb5 g6 Qf3 f5 Qd5 Qe7 Nxc7+ Kd8 Nxa8 b6',
+  'b: e4 e5 Nf3 Nc6 c3 Nf6 d4 Nxe4 d5 Ne7 Nxe5 Ng6 Qd4 Qf6',
+  'b: e4 e5 Nf3 Nc6 Bc4 Bc5 b4 Bxb4 c3 Ba5 d4 d6 Qb3 Qd7 dxe5 Bb6',
+  'b: e4 e5 Nf3 Nc6 d4 exd4 c3 d5 exd5 Qxd5 cxd4 Bg4 Be2 Bb4+ Nc3 Bxf3 Bxf3 Qc4',
+  'b: e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Na5 d3 h6 Nf3 e4 Qe2 Nxc4 dxc4 Bc5',
+  // Sicilian main lines and sidelines
+  'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 e5 Nf3 Be7 Bc4 O-O O-O Be6 Bb3',
+  'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 h3 e5 Nde2 h5 g3 Be7 Bg2 b5',
+  'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 Nc6 Bg5 e6 Qd2 a6 O-O-O Bd7 f4 b5 Bxf6 gxf6',
+  'e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 Bg7 f3 Nc6 Qd2 O-O O-O-O d5 exd5 Nxd5 Nxc6 bxc6',
+  'e4 c5 Nf3 d6 d4 cxd4 Qxd4 Nc6 Bb5 Bd7 Bxc6 Bxc6 Nc3 Nf6 Bg5 e6 O-O-O Be7',
+  'e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 Nf6 Nc3 d6 Bg5 e6 Qd2 Be7 O-O-O O-O f4 Nxd4 Qxd4 Qa5',
+  'e4 c5 Nf3 Nc6 d4 cxd4 Nxd4 e6 Nc3 Qc7 Be3 a6 Qd2 Nf6 O-O-O Bb4 f3 Ne5',
+  'e4 c5 Nf3 e6 d4 cxd4 Nxd4 a6 Nc3 Qc7 Bd3 Nf6 O-O Bc5 Nb3 Be7 f4 d6',
+  'e4 c5 Nf3 e6 Nc3 Nc6 d4 cxd4 Nxd4 Qc7 g3 a6 Bg2 Nf6 O-O Nxd4 Qxd4 Bc5',
+  'e4 c5 Nf3 Nc6 Bb5 e6 O-O Nge7 Re1 a6 Bf1 d5 exd5 Nxd5 d4 cxd4 Nxd4',
+  'e4 c5 Nf3 d6 Bb5+ Nd7 d4 Nf6 Nc3 cxd4 Qxd4 e5 Qd3 h6 Be3 Be7',
+  'e4 c5 c3 Nf6 e5 Nd5 d4 cxd4 cxd4 d6 Nf3 Nc6 Bc4 Nb6 Bb5 dxe5 Nxe5 Bd7',
+  'e4 c5 c3 e6 d4 d5 exd5 exd5 Nf3 Nc6 Bb5 Bd6 dxc5 Bxc5 O-O Ne7',
+  'b: e4 c5 d4 cxd4 c3 dxc3 Nxc3 Nc6 Nf3 d6 Bc4 e6 O-O Nf6 Qe2 Be7 Rd1 e5',
+  'b: e4 c5 Nc3 Nc6 g3 g6 Bg2 Bg7 d3 d6 Be3 e5 Qd2 Nge7 Bh6 O-O h4 f6',
+  'b: e4 c5 Nc3 Nc6 f4 e6 Nf3 d5 Bb5 Ne7 exd5 exd5 O-O a6',
+  'b: e4 c5 b4 cxb4 a3 d5 exd5 Qxd5 Nf3 e5 axb4 Bxb4',
+  'b: e4 c5 Nf3 d6 c3 Nf6 Be2 Nc6 d3 g6 O-O Bg7 Nbd2 O-O',
+  'b: e4 c5 Nf3 Nc6 Bc4 e6 O-O Nf6 d3 d5 Bb3 Be7',
+  'b: e4 c5 d3 Nc6 g3 g6 Bg2 Bg7 f4 d6 Nf3 e6 O-O Nge7',
+  // French
+  'e4 e6 d4 d5 Nc3 Nf6 e5 Nfd7 f4 c5 Nf3 Nc6 Be3 cxd4 Nxd4 Bc5 Qd2 O-O O-O-O a6',
+  'e4 e6 d4 d5 Nc3 Bb4 e5 c5 a3 Bxc3+ bxc3 Ne7 Nf3 Bd7 a4 Qa5 Bd2 Nbc6 Be2 f6',
+  'e4 e6 d4 d5 Nd2 Nf6 e5 Nfd7 Bd3 c5 c3 Nc6 Ne2 cxd4 cxd4 f6 exf6 Nxf6 Nf3 Bd6 O-O',
+  'e4 e6 d4 d5 Nd2 Be7 Ngf3 Nf6 e5 Nfd7 Bd3 c5 c3 Nc6 O-O g5',
+  'e4 e6 d4 d5 e5 c5 c3 Nc6 Nf3 Bd7 Be2 Nge7 Na3 cxd4 cxd4 Nf5 Nc2 Qb6 O-O',
+  'b: e4 e6 d3 d5 Nd2 Nf6 Ngf3 c5 g3 Nc6 Bg2 Be7 O-O O-O Re1 b5',
+  'b: e4 e6 Nf3 d5 Nc3 Nf6 e5 Nfd7 d4 c5 dxc5 Nc6 Bf4 Bxc5 Bd3 f6',
+  // Caro-Kann
+  'e4 c6 d4 d5 e5 Bf5 Nf3 e6 Be2 Nd7 O-O Ne7 Nbd2 h6 Nb3 g5',
+  'e4 c6 d4 d5 e5 Bf5 Nc3 e6 g4 Bg6 Nge2 c5 h4 h5 Nf4 Bh7 Nxh5 cxd4',
+  'e4 c6 d4 d5 exd5 cxd5 Bd3 Nc6 c3 Nf6 Bf4 Bg4 Qb3 Qd7 Nd2 e6 Ngf3 Bxf3 Nxf3 Bd6',
+  'e4 c6 d4 d5 Nd2 dxe4 Nxe4 Nd7 Nf3 Ngf6 Nxf6+ Nxf6 c3 Bg4 Be2 e6 O-O Bd6',
+  'e4 c6 d4 d5 Nc3 dxe4 Nxe4 Nf6 Nxf6+ exf6 c3 Bd6 Bd3 O-O Qc2 Re8+ Ne2 h6',
+  'b: e4 c6 Nf3 d5 Nc3 Bg4 h3 Bxf3 Qxf3 e6 d3 Nf6 Be2 Nbd7 O-O Bd6',
+  'b: e4 c6 d3 d5 Nd2 e5 Ngf3 Bd6 g3 Nf6 Bg2 O-O O-O Re8',
+  'b: e4 c6 c4 d5 exd5 cxd5 cxd5 Nf6 Nc3 Nxd5 Nf3 Nc6 Bb5 e6 O-O Be7 d4 O-O',
+  // Scandinavian, Pirc, Modern, Alekhine (Penopi meets them as White)
+  'w: e4 d5 exd5 Qxd5 Nc3 Qd6 d4 Nf6 Nf3 a6 Be3 Nc6 Qd2 Bf5 O-O-O O-O-O',
+  'w: e4 d5 exd5 Qxd5 Nc3 Qa5 d4 c6 Nf3 Nf6 Bc4 Bf5 Bd2 e6 Nd5 Qd8 Nxf6+ gxf6',
+  'w: e4 d6 d4 Nf6 Nc3 g6 Be3 c6 Qd2 b5 Bd3 Nbd7 Nf3 e5 O-O Bg7',
+  'w: e4 g6 d4 Bg7 Nc3 c6 Be3 d5 Qd2 dxe4 Nxe4 Nf6 Nxf6+ Bxf6 Nf3 Bg7',
+  'w: e4 Nf6 e5 Nd5 d4 d6 Nf3 dxe5 Nxe5 g6 Bc4 c6 O-O Bg7 Re1 O-O',
+  'w: e4 Nc6 d4 d5 e5 Bf5 Ne2 e6 Ng3 Bg6 h4 h5 c3 f6',
+  'w: e4 b6 d4 Bb7 Bd3 e6 Nf3 c5 c3 Nf6 Qe2 Be7 O-O',
+  // 1.d4 d5 and the Queen's Gambit
+  'd4 d5 c4 e6 Nf3 Nf6 Nc3 Be7 Bf4 O-O e3 Nbd7 c5 c6 Bd3 b6 b4 a5 a3',
+  'd4 d5 c4 e6 Nf3 Nf6 Nc3 c6 Bg5 h6 Bh4 dxc4 e4 g5 Bg3 b5 Be2 Bb7 O-O Nbd7',
+  'd4 d5 c4 e6 Nc3 Be7 cxd5 exd5 Bf4 c6 e3 Bf5 g4 Be6 h4 Nd7',
+  'd4 d5 c4 c6 Nc3 Nf6 e3 a6 Nf3 b5 b3 Bg4 Be2 Nbd7 O-O e6',
+  'd4 d5 c4 c6 Nf3 Nf6 e3 Bf5 Nc3 e6 Nh4 Bg6 Nxg6 hxg6 Bd3 Nbd7 O-O Bd6',
+  'd4 d5 c4 dxc4 Nf3 Nf6 e3 e6 Bxc4 c5 O-O a6 dxc5 Qxd1 Rxd1 Bxc5 Kf1 b5 Be2 Bb7',
+  'b: d4 d5 c4 e5 dxe5 d4 Nf3 Nc6 g3 Be6 Nbd2 Qd7 Bg2 O-O-O',
+  'b: d4 d5 Bf4 c5 e3 Nc6 Nf3 Nf6 c3 Qb6 Qb3 c4 Qc2 Bg4',
+  'b: d4 d5 Nf3 Nf6 e3 e6 Bd3 c5 b3 Nc6 O-O Bd6 Bb2 O-O Nbd2',
+  'b: d4 d5 Nc3 Nf6 Bg5 c6 e3 Nbd7 f4 Qa5 Bd3 e6 Nf3 Bb4',
+  'b: d4 d5 e4 dxe4 Nc3 Nf6 f3 exf3 Nxf3 Bg4 h3 Bxf3 Qxf3 c6 Be3 e6',
+  'b: d4 d5 Nf3 Nf6 Bg5 e6 e3 c5 Nbd2 Nc6 c3 Be7 Bd3 O-O',
+  // 1.d4 Nf6: Nimzo, Queen's Indian, KID, Grünfeld and their sidelines
+  'd4 Nf6 c4 e6 Nc3 Bb4 e3 b6 Bd3 Bb7 Nf3 O-O O-O d5 cxd5 exd5 a3 Bd6',
+  'd4 Nf6 c4 e6 Nc3 Bb4 Qc2 d5 cxd5 exd5 Bg5 h6 Bh4 c5 dxc5 g5 Bg3 Ne4',
+  'd4 Nf6 c4 e6 Nc3 Bb4 Nf3 c5 g3 cxd4 Nxd4 O-O Bg2 d5 cxd5 Nxd5 Qb3 Qa5',
+  'd4 Nf6 c4 e6 Nf3 b6 g3 Bb7 Bg2 Be7 O-O O-O Nc3 Ne4 Bd2 Bf6 Rc1 c5 d5 exd5 cxd5',
+  'd4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Nf3 O-O Be2 e5 O-O Nbd7 Be3 c6 d5 c5',
+  'd4 Nf6 c4 g6 Nc3 Bg7 e4 d6 f4 O-O Nf3 c5 d5 e6 Be2 exd5 cxd5 Re8 e5 dxe5 fxe5 Ng4',
+  'd4 Nf6 c4 g6 Nc3 Bg7 e4 d6 Be2 O-O Bg5 c5 d5 e6 Qd2 exd5 exd5 Re8 Nf3 Bg4',
+  'd4 Nf6 c4 g6 Nc3 d5 cxd5 Nxd5 e4 Nxc3 bxc3 Bg7 Bc4 c5 Ne2 Nc6 Be3 O-O O-O Bg4 f3 Na5',
+  'd4 Nf6 c4 g6 Nc3 d5 Bf4 Bg7 e3 O-O Rc1 c5 dxc5 Be6 Nf3 Nc6 Nd4',
+  'd4 Nf6 c4 g6 Nf3 Bg7 g3 O-O Bg2 d6 O-O Nbd7 Nc3 e5 e4 c6 h3 Qb6',
+  'd4 Nf6 c4 c5 d5 e6 Nc3 exd5 cxd5 d6 e4 g6 Nf3 Bg7 Be2 O-O O-O Re8 Nd2 Na6',
+  'd4 Nf6 c4 e6 Nf3 d5 Nc3 c6 e3 Nbd7 Qc2 Bd6 Be2 O-O O-O dxc4 Bxc4 e5',
+  'd4 Nf6 Nf3 g6 g3 Bg7 Bg2 O-O O-O d6 c4 Nc6 Nc3 a6 h3 Rb8 e4 b5',
+  'd4 Nf6 Nf3 e6 Bg5 c5 e3 h6 Bh4 b6 c3 Be7 Nbd2 Bb7 Bd3 cxd4 exd4',
+  'b: d4 Nf6 Bf4 g6 e3 Bg7 Nf3 d6 h3 O-O Be2 c5 c3 Qb6 Qb3 Nc6',
+  'b: d4 Nf6 Nc3 d5 Bg5 Nbd7 f3 c6 e4 dxe4 fxe4 e5 dxe5 Qa5',
+  'b: d4 Nf6 Nf3 e6 e3 c5 Bd3 d5 b3 Nc6 O-O Bd6 Bb2 O-O Nbd2 Qe7',
+  'b: d4 Nf6 g3 g6 Bg2 Bg7 Nf3 O-O O-O d6 b3 e5 dxe5 Ng4',
+  'b: d4 Nf6 c4 e6 g3 Bb4+ Bd2 Be7 Bg2 d5 Nf3 O-O O-O c6 Qc2 b6',
+  // Dutch, Benoni and others with 1.d4 (Penopi meets them as White)
+  'w: d4 f5 g3 Nf6 Bg2 g6 Nf3 Bg7 O-O O-O c4 d6 Nc3 Qe8 d5 a5',
+  'w: d4 f5 g3 Nf6 Bg2 e6 Nf3 Be7 O-O O-O c4 d6 Nc3 Qe8 b3 a5 Ba3',
+  'w: d4 e6 c4 b6 e4 Bb7 Bd3 Nc6 Nf3 Nb4 Be2',
+  'w: d4 c5 d5 e5 e4 d6 Nc3 Be7 Nf3 Bg4 Be2 Bxf3 Bxf3',
+  'w: d4 g6 c4 Bg7 Nc3 d6 e4 Nc6 Be3 e5 d5 Nce7 Nf3',
+  'w: d4 b5 e4 Bb7 Bxb5 Bxe4 Nf3 e6 O-O Nf6',
+  'w: d4 Nc6 d5 Ne5 e4 e6 f4 Ng6 Nf3 exd5 exd5',
+  // English, Réti
+  'c4 e5 Nc3 Nf6 g3 d5 cxd5 Nxd5 Bg2 Nb6 Nf3 Nc6 O-O Be7 d3 O-O a3 Be6 b4',
+  'c4 Nf6 Nc3 e5 Nf3 Nc6 e3 Bb4 Qc2 Bxc3 Qxc3 Qe7 a3 a5 b3 d6 Bb2 O-O',
+  'c4 c5 Nf3 Nf6 Nc3 d5 cxd5 Nxd5 e4 Nb4 Bc4 Nd3+ Ke2 Nf4+ Kf1',
+  'c4 e6 Nc3 d5 d4 Nf6 Nf3 Be7 Bf4 O-O e3 c5 dxc5 Bxc5',
+  'c4 g6 Nc3 Bg7 g3 c5 Bg2 Nc6 Nf3 e6 O-O Nge7 d3 O-O Bd2 d5',
+  'Nf3 d5 c4 d4 e3 Nc6 exd4 Nxd4 Nxd4 Qxd4 Nc3 Nf6 d3 e5',
+  'Nf3 Nf6 c4 c5 Nc3 Nc6 g3 d5 cxd5 Nxd5 Bg2 Nc7 O-O e5 d3 Be7',
+  'b: Nf3 d5 b3 Nf6 Bb2 e6 e3 Be7 c4 O-O Be2 c5 O-O Nc6',
+  'b: g3 d5 Bg2 Nf6 Nf3 c6 O-O Bg4 d3 Nbd7 Nbd2 e5 e4 dxe4 dxe4 Be7',
+  'b: b3 e5 Bb2 Nc6 e3 d5 Bb5 Bd6 Nf3 Qe7 c4 Nf6',
+  'b: f4 d5 Nf3 g6 e3 Bg7 Be2 Nf6 O-O O-O d3 c5 Qe1 Nc6',
+  'b: e3 e5 c4 Nf6 Nc3 d5 cxd5 Nxd5 Nf3 Nc6 Bb5 Nxc3 bxc3 Bd6',
+  'b: Nc3 d5 e4 d4 Nce2 e5 Ng3 Be6 Nf3 Nd7 Bb5 f6',
+  'b: d3 e5 Nf3 Nc6 g3 d5 Bg2 Nf6 O-O Be7 c4 O-O',
+  'b: a3 e5 c4 Nf6 Nc3 d5 cxd5 Nxd5 e3 Nxc3 bxc3 Bd6',
+  'b: h3 e5 e4 Nf6 Nc3 Bb4 Bd3 d5 exd5 Nxd5 Nf3 Nc6',
 ];

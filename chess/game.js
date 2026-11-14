@@ -4,7 +4,7 @@
 // Penopi plays from a small opening book (book.js) while the game follows one of its lines, and thinks on my
 // time too (short searches of my position fill the worker's table, as LOA 튀르크 did).
 import { LINES } from './lines.js';
-import { BOOK } from './book.js';
+import { BOOK, parseLine } from './book.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
@@ -52,13 +52,16 @@ function buildBook() {
   book = new Map();
   const B = globalThis.ChessEngine({ ttBits: 4 });
   for (const line of BOOK) {
+    const { only, sans } = parseLine(line);
     B.setStart();
-    for (const tok of line.split(' ')) {
+    for (const tok of sans) {
       const m = B.legalMoves().find((x) => B.san(x).replace(/[+#]/g, '') === tok.replace(/[+#]/g, ''));
       if (m === undefined) break;
-      const k = posKey(B.fen());
-      if (!book.has(k)) book.set(k, new Set());
-      book.get(k).add(m);
+      if (!only || only === (B.side === 0 ? 'w' : 'b')) { // a "w:"/"b:" line: the other side's moves are only expected
+        const k = posKey(B.fen());
+        if (!book.has(k)) book.set(k, new Set());
+        book.get(k).add(m);
+      }
       B.play(m);
     }
   }

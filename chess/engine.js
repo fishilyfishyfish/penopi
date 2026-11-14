@@ -994,7 +994,7 @@ function ChessEngine(opts) {
   setFen(START_FEN);
   return {
     WHITE, BLACK, P, N, B, R, Q, K, MATE, MATE_BOUND, FLAG_CAP, FLAG_EP, FLAG_CASTLE, FLAG_DOUBLE, START_FEN,
-    setFen, fen, setStart() { setFen(START_FEN); }, legalMoves, play, think, evaluate, qscore, features, PDEF, params: () => PV.slice(), perft, san, uci, status, inCheck, ttClear,
+    setFen, fen, setStart() { setFen(START_FEN); }, legalMoves, play, think, evaluate, qscore, features, see, PDEF, params: () => PV.slice(), perft, san, uci, status, inCheck, ttClear,
     mFrom, mTo, mPromo, mFlags, sqName, piecesOf,
     get side() { return side; }, get board() { return board; }, get kings() { return kingSq.slice(); },
   };

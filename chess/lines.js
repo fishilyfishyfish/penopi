@@ -37,12 +37,15 @@ export const LINES = {
     "체크라고 소리 안 질러도 다 들려.",
     "그 정도로는 안 잡혀.",
   ],
+  // engineCap / humanCap: only when the capture wins material (not in an even exchange; chess/game.js)
   engineCap: [
     "{pc} 가져간다.",
     "냠. {pc} 하나.",
     "그 {pc}, 아무도 안 지키던데.",
     "공짜 {pc} 고마워.",
   ],
+  // queens traded off (an even exchange: no gloating, no sulking)
+  queenTrade: ["퀸끼리 바꿨네. 이제 조용해지겠다.", "퀸 교환. 연습하기엔 이 편이 나아.", "퀸 없는 체스도 좋아해."],
   engineTakesQueen: ["퀸 가져간다. 이제 좀 쉬워지겠네.", "퀸이 사라졌네. 어디 갔을까."],
   humanCap: [
     "{pc} 줬어. 일부러야. 아마도.",

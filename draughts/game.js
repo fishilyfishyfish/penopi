@@ -82,20 +82,28 @@ function myStatus() {
   if (sel >= 0 && (via.length || askRoute)) return `${base} · 거쳐 갈 칸을 눌러`;
   return state.mustCapture ? `${base} · 잡아야 해` : base;
 }
+// pieces a capture really wins: what it took, less what the move before took (a taking back) or what the
+// other side must take back now (captures are forced). An even exchange says nothing.
+function netCaptured(m) {
+  const prev = moves.length >= 2 ? moves[moves.length - 2] : null;
+  const prevK = prev && prev.caps ? prev.caps.length : 0;
+  const replyK = state.mustCapture && state.legal.length ? state.legal[0].caps.length : 0;
+  return m.caps.length - Math.max(prevK, replyK);
+}
 function humanTalk(m) {
   if (state.result) return;
-  const facts = [], k = m.caps.length;
-  if (k >= 3) facts.push(['humanBigCap', { k }]);
-  else if (k) facts.push(['humanCap', null, 0.6]);
+  const facts = [], k = m.caps.length, net = k ? netCaptured(m) : 0;
+  if (net >= 3) facts.push(['humanBigCap', { k }]);
+  else if (net >= 1) facts.push(['humanCap', null, 0.6]);
   if (m.promote) facts.unshift(['humanKing']);
   api.humanMoved({ facts, plies: moves.length });
 }
 function engineTalk(m, info) {
   if (state.result) return;
-  const sc = info ? info.score : 0, k = m.caps.length, facts = [];
+  const sc = info ? info.score : 0, k = m.caps.length, facts = [], net = k ? netCaptured(m) : 0;
   if (m.promote) facts.push(['engineKing']);
-  if (k >= 3) facts.push(['engineBigCap', { k }]);
-  else if (k) facts.push(['engineCap', null, 0.6]);
+  if (net >= 3) facts.push(['engineBigCap', { k }]);
+  else if (net >= 1) facts.push(['engineCap', null, 0.6]);
   if (state.mustCapture && !k) facts.push(['offerCapture', null, 0.5]);
   api.engineMoved({
     p: 1 / (1 + Math.exp(-sc / 200)),

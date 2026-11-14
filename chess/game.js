@@ -107,15 +107,37 @@ async function engineMove() {
 }
 
 // ---------- moves ----------
+// a capture is remarked on only when it wins material, not in an even exchange (a capture the other side
+// can answer by taking back, or the taking back itself). Values as in the engine's exchange evaluation.
+const VAL = [0, 100, 320, 330, 500, 950, 0];
+const material = (b) => { let v = 0; for (let s = 0; s < 128; s++) { if (s & 0x88) { s += 7; continue; } const p = b[s]; if (p) v += (p & 8 ? -1 : 1) * VAL[p & 7]; } return v; };
+let prevCapture = null; // the last move if it was a capture: {to, matBefore} (material from White's view before it)
+function captureKind(m, taken, mover) {
+  if (!taken) { prevCapture = null; return null; }
+  const to = mTo(m), matBefore = material(state.b), sign = mover === 0 ? 1 : -1;
+  let kind;
+  if (prevCapture && prevCapture.to === to) {
+    // taking back: even if the two captures together leave material about where it was
+    const net = sign * (matBefore + sign * VAL[taken] - prevCapture.matBefore);
+    kind = Math.abs(net) < 150 ? 'trade' : net > 0 ? 'win' : 'trade';
+  } else {
+    // starting a capture: the exchange evaluation says what it wins if both sides keep taking back
+    const gain = R.see(m);
+    kind = gain >= 150 ? 'win' : 'trade';
+  }
+  prevCapture = { to, matBefore };
+  return kind;
+}
 function commit(m, info) {
   const mover = state.side, before = state.b, to = mTo(m), fl = mFlags(m);
   const capSq = fl & R.FLAG_EP ? (mover === 0 ? to - 16 : to + 16) : to;
   const taken = fl & R.FLAG_CAP ? before[capSq] & 7 : 0;
+  const kind = captureKind(m, taken, mover);
   moves.push(m); sel = -1; promo = null;
   if (taken) scribble(capSq, before[capSq]);
   state = replay();
   render(m);
-  if (mover === human) humanTalk(m, taken); else engineTalk(m, info, taken);
+  if (mover === human) humanTalk(m, taken, kind); else engineTalk(m, info, taken, kind);
   if (taken && mover !== human) api.runTo((visual(to) % 8 + 0.5) / 8);
   next();
 }
@@ -132,23 +154,24 @@ function myStatus() {
   if (promo) return `${base} · 무엇으로 승진할래?`;
   return state.check ? `${base} · 체크!` : base;
 }
-function humanTalk(m, taken) {
+function humanTalk(m, taken, kind) {
   if (state.result) return;
   const facts = [], fl = mFlags(m);
   if (state.check) facts.push(['humanCheck', null, 0.6]);
-  if (taken === R.Q) facts.push(['humanTakesQueen']);
-  else if (taken) facts.push(['humanCap', { pc: NAMES[taken] }, 0.5]);
+  if (kind === 'win') facts.push(taken === R.Q ? ['humanTakesQueen'] : ['humanCap', { pc: NAMES[taken] }, 0.5]);
+  else if (kind === 'trade' && taken === R.Q) facts.push(['queenTrade', null, 0.5]);
   if (fl & R.FLAG_CASTLE) facts.push(['humanCastle', null, 0.6]);
   if (mPromo(m)) facts.push(['humanPromote']);
   api.humanMoved({ facts, plies: moves.length });
 }
-function engineTalk(m, info, taken) {
+function engineTalk(m, info, taken, kind) {
   if (state.result) return;
   const sc = info ? info.score : 0, fl = mFlags(m), facts = [];
   if (mPromo(m)) facts.push(['enginePromote']);
-  if (taken === R.Q) facts.push(['engineTakesQueen']);
+  if (kind === 'win' && taken === R.Q) facts.push(['engineTakesQueen']);
   if (state.check) facts.push(['engineCheck', null, 0.8]);
-  if (taken && taken !== R.Q) facts.push(['engineCap', { pc: NAMES[taken] }, 0.6]);
+  if (kind === 'win' && taken !== R.Q) facts.push(['engineCap', { pc: NAMES[taken] }, 0.6]);
+  if (kind === 'trade' && taken === R.Q) facts.push(['queenTrade', null, 0.5]);
   if (fl & R.FLAG_CASTLE) facts.push(['engineCastle', null, 0.5]);
   const fresh = info && info.book ? true : firstSearch;
   firstSearch = !!(info && info.book);
@@ -322,7 +345,7 @@ export default {
   },
   start(side) {
     stop();
-    human = side; moves = []; sel = -1; promo = null; playing = true;
+    human = side; moves = []; sel = -1; promo = null; playing = true; prevCapture = null;
     clearDoodles();
     boardEl.setAttribute('aria-label', '체스 판, 나는 ' + sideName(side));
     state = replay();
@@ -332,7 +355,7 @@ export default {
   reset() {
     stop();
     const had = moves.length > 0;
-    playing = false; moves = []; sel = -1; promo = null; human = 0;
+    playing = false; moves = []; sel = -1; promo = null; human = 0; prevCapture = null;
     tray();
     state = replay();
     if (had && !reduced()) wipe(boardEl, 8, () => { clearDoodles(); render(); });

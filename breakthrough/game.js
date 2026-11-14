@@ -81,10 +81,17 @@ function next() {
   else engineMove();
   render();
 }
+// a capture that wins a piece: not a taking back, and the other side can't take one back right away
+// (an exchange says nothing)
+function freeCapture(m) {
+  if (!(m & 4096)) return false;
+  const prev = moves.length >= 2 ? moves[moves.length - 2] : 0;
+  return !(prev & 4096) && !state.legal.some((x) => x & 4096);
+}
 function humanTalk(m) {
   if (state.over) return;
   const facts = [], from = m & 63, to = (m >> 6) & 63;
-  if (m & 4096) facts.push(['humanCap', null, 0.7]);
+  if (freeCapture(m)) facts.push(['humanCap', null, 0.7]);
   if (!deepSaid.h && advanceOf(human, to) >= 5) { deepSaid.h = true; facts.push(['humanDeep']); }
   if (!homeSaid && moves.length > 12 && advanceOf(human, from) === 0) { homeSaid = true; facts.push(['homeLeft', null, 0.5]); }
   api.humanMoved({ facts, plies: moves.length });
@@ -92,7 +99,7 @@ function humanTalk(m) {
 function engineTalk(m, info) {
   if (state.over) return;
   const sc = info.score, to = (m >> 6) & 63, facts = [];
-  if (m & 4096) facts.push(['engineCap', null, 0.7]);
+  if (freeCapture(m)) facts.push(['engineCap', null, 0.7]);
   if (!deepSaid.e && advanceOf(3 - human, to) >= 5) { deepSaid.e = true; facts.push(['engineDeep']); }
   api.engineMoved({
     p: 1 / (1 + Math.exp(-sc / 200)),

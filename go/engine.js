@@ -334,7 +334,7 @@ function GoEngine(opts) {
     }
     treeReset();
   }
-  const PRIOR_N = 10, RAVE_K = opts.raveK || 600, UCT_C = opts.uct === undefined ? 0.15 : opts.uct;
+  const PRIOR_N = 10, RAVE_K = opts.raveK || 600, UCT_C = opts.uct === undefined ? 0.05 : opts.uct;
   // expand a node for the side to move on B: every legal move (not filling own true eyes) + pass, with priors
   function expand(node, B, last) {
     if (used + N * N + 1 >= MAXN) return false;

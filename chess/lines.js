@@ -1,14 +1,16 @@
-// Chess lines, added to shared/lines.js. Penopi is Turk under another name, and the Turk was a chess automaton,
-// so here it boasts of 1770 again (the lines LOA 튀르크 had and the other games dropped). Penopi is also still
-// "practising" chess (no record kept, game.practice), and says so.
+// Chess lines, added to shared/lines.js. The world as the user set it (2026-11-14): chess is the game Penopi is
+// worst at. It is still practising (no record kept, game.practice) and says so; the old chess automaton "the
+// Turk" had a person hidden inside, Penopi is really alone, which is why chess is hard. Losing to Penopi here
+// earns extra teasing: you lost to someone who is still practising.
 // When: chess/game.js. {pc}: a piece's name.
 export const LINES = {
   // Penopi is still "practising" chess (the user's concept): no record is kept, and it says so
-  $replace: ['pick', 'startHuman', 'startEngine'],
+  $replace: ['pick', 'startHuman', 'startEngine', 'engineWin2'], // engineWin2: the common list boasts of beating Napoleon at chess
   practiceHello: [
     "체스는 아직 연습 중이야. 그러니까 여기선 전적 안 적어. 너도 마음 편히 둬.",
     "연습 판이야. 이겨도 져도 기록엔 안 남아. 나한테 좋은 일이지.",
-    "1770년부터 뒀는데 아직 연습 중이야. 체스가 원래 그래.",
+    "다른 게임은 다 자신 있는데 체스는 아직이야. 연습 중.",
+    "체스는 내가 제일 못하는 게임이야. 비밀인데, 너한테만 말해 줄게.",
   ],
   pick: [
     "백 할래, 흑 할래? 연습 판이니까 아무거나.",
@@ -25,6 +27,19 @@ export const LINES = {
   humanWin: [
     "...연습 판이라 다행이다. 안 적는 거 맞지?",
     "이건 연습이었어. 진짜 판은 다음에.",
+    "체스는 원래 내가 제일 못하는 거야. 알고 이긴 거지?",
+  ],
+  // I lost to Penopi, who is still practising: extra teasing
+  engineWin: [
+    "연습 중인 나한테 졌네. 기분 어때?",
+    "나 체스 제일 못하는 거 알지? 그런 나한테 진 거야.",
+    "전적 안 적기로 한 거 다행이다. 너한테.",
+    "연습 상대가 되어 줘서 고마워. 많이 늘었어. 나만.",
+  ],
+  engineWin2: [
+    "다른 게임에서 날 만나면 어쩌려고 그래. 거기선 연습 아니야.",
+    "연습하는 낙서한테도 지면, 진짜 판은 어떡해.",
+    "오늘 일은 아무한테도 말 안 할게. 기록도 안 남았잖아.",
   ],
   engineCheck: [
     "체크.",
@@ -60,11 +75,12 @@ export const LINES = {
   engineWinMate: [
     "체크메이트. {n}수 걸렸네.",
     "메이트. 킹 갈 데가 없지?",
-    "체크메이트. 1770년에도 이렇게 이겼어.",
+    "체크메이트. 연습 중인 나한테 메이트당했어.",
+    "메이트. 내가 체스를 제일 못한다고 했지? 그런데도.",
   ],
   humanWinMate: [
     "...체크메이트. 안에 사람 있는 거 아니야? 나 말고 너 말이야.",
-    "메이트당했네. 나폴레옹한테도 안 진 내가.",
+    "메이트당했네. 그래, 체스는 아직 연습 중이라니까.",
   ],
   drawStalemate: ["스테일메이트. 이긴 판을 비기다니. 아, 너 말고 나 얘기야.", "둘 데가 없는데 체크는 아니야. 비겼어."],
   drawRepetition: ["같은 자리 세 번째. 비긴 걸로 하자.", "왔다 갔다만 하네. 무승부."],
@@ -75,9 +91,9 @@ export const LINES = {
     "그 말 지키는 애 있어?",
   ],
   chatChess: [
-    "원조 튀르크는 1770년에 볼프강 폰 켐펠렌이 마리아 테레지아한테 보이려고 만들었어.",
-    "튀르크 안에는 사실 사람이 숨어서 뒀어. 나는 진짜로 혼자야.",
-    "튀르크는 1809년에 나폴레옹이랑 뒀다는 얘기가 있어. 나폴레옹이 졌지.",
+    "옛날에 '튀르크'라는 체스 기계가 있었어. 1770년에 볼프강 폰 켐펠렌이 만들었지.",
+    "튀르크 안에는 사실 사람이 숨어서 뒀대. 그러니 잘 뒀지. 나는 진짜 혼자라서 연습이 필요해.",
+    "튀르크는 나폴레옹이랑 둬서 이겼다는 얘기가 있어. 나는 아직 그 정도는 아니야.",
     "체스 첫 수로 둘 수 있는 수는 20가지, 두 수씩 두면 400가지야.",
     "캐슬링은 한 수에 말 두 개가 움직이는 유일한 수야.",
     "앙파상은 15세기쯤 폰이 두 칸 갈 수 있게 되면서 같이 생긴 규칙이야.",

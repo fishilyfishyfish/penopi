@@ -3,7 +3,7 @@ import { GAMES } from './games.js';
 import { NAME, perchHtml, animate } from './shared/character.js';
 import { COMMON, LOBBY } from './shared/lines.js';
 import { createTalk } from './shared/talk.js';
-import { loadRecord, visit } from './shared/record.js';
+import { loadRecord, visit, store } from './shared/record.js';
 import { offline } from './shared/offline.js';
 
 const shelf = document.getElementById('shelf');
@@ -15,21 +15,24 @@ const talk = createTalk(lines, perch.querySelector('.bubble'), () => pc && pc.pl
 pc = animate(perch, (k, v) => talk.say(k, v));
 
 let w = 0, l = 0;
-shelf.innerHTML = GAMES.map((game) => {
+// the games I opened most recently first (shared/shell.js keeps penopi.<id>.opened), the rest in games.js order
+const opened = (g) => store.get(`penopi.${g.id}.opened`, 0) || 0;
+const ORDER = GAMES.map((g, i) => [g, i]).sort((a, b) => (opened(b[0]) - opened(a[0])) || (a[1] - b[1])).map(([g]) => g);
+shelf.innerHTML = ORDER.map((game) => {
   const { rec } = loadRecord(game.id);
   if (!game.practice) { w += rec.penopi; l += rec.human; }
   const r = game.practice ? `${NAME} 연습 중 · 전적 안 적음` : rec.games ? `${NAME} ${rec.penopi}승 · 너 ${rec.human}승` : '아직 안 둬 봤어';
   return `<a class="card" href="${game.id}/" data-id="${game.id}">
     <img src="${game.id}/thumb.svg" alt="" width="88" height="88">
-    <div><h2>${game.name}</h2><p>${game.blurb}</p><p class="rec">${r}</p></div></a>`;
+    <h2>${game.name}</h2><p class="blurb">${game.blurb}</p><p class="rec">${r}</p></a>`;
 }).join('');
 
 // pointing at a card: Penopi walks over and pitches it (once per card per visit)
 const pitched = new Set();
 shelf.querySelectorAll('.card').forEach((card, i) => {
   const point = () => {
-    pc.walkTo(0.2 + (0.6 * i) / Math.max(1, GAMES.length - 1), 1200);
-    const game = GAMES[i];
+    pc.walkTo(i % 2 ? 0.75 : 0.25, 1200); // two cards a row
+    const game = ORDER[i];
     if (!pitched.has(game.id) && game.pitch) { pitched.add(game.id); perch.querySelector('.bubble').textContent = game.pitch; pc.place(pc.x, true); }
   };
   card.addEventListener('pointerenter', point);

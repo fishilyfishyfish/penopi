@@ -36,6 +36,7 @@ export function boot(game) {
   const record = game.practice ? { rec: { games: 0, penopi: 0, human: 0, draws: 0, streak: 0, hstreak: 0 }, add: () => 0, reset() {} } : loadRecord(game.id, game.legacyRecord);
   const rec = record.rec;
   visit();
+  store.set(`penopi.${game.id}.opened`, Date.now()); // the lobby puts recently opened games first
 
   document.body.insertAdjacentHTML('afterbegin', `
 <main class="stage game-${game.id}" id="stage">

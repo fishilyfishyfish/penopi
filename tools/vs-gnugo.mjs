@@ -36,8 +36,9 @@ for (let g = 0; g < GAMES; g++) {
   const gg = gtp(), E = GoEngine();
   await gg.ask('boardsize 9'); await gg.ask('clear_board'); await gg.ask('komi 7.5');
   const weBlack = g % 2 === 0;
-  let passes = 0;
+  let passes = 0, k_last = 0;
   for (let k = 0; k < 200 && passes < 2; k++) {
+    k_last = k;
     const ours = (E.stm === 1) === weBlack;
     let m;
     if (ours) { const info = E.think({ time: MS }); if (info.resign) { passes = 4; break; } m = info.move; await gg.ask(`play ${E.stm === 1 ? 'b' : 'w'} ${toGtp(m)}`); }
@@ -49,6 +50,7 @@ for (let g = 0; g < GAMES; g++) {
     passes = m < 0 ? passes + 1 : 0;
     E.play(m);
   }
+  if (passes === 4) console.log('  we resigned after', k_last, 'moves');
   const fs2 = passes === 3 ? (weBlack ? 'B+R' : 'W+R') : passes === 4 ? (weBlack ? 'W+R' : 'B+R') : await gg.ask('final_score');
   const blackWon = /^B/.test(fs2), won = blackWon === weBlack;
   if (won) wins++;

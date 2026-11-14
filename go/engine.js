@@ -18,6 +18,7 @@ function GoEngine(opts) {
   opts = opts || {};
   const N = opts.size || 9, W = N + 2, NP = W * W, PASS = -1;
   const KOMI = opts.komi === undefined ? 7.5 : opts.komi;
+  const W_PAT = opts.patterns === undefined ? 1 : opts.patterns;
   const EMPTY = 0, BLACK = 1, WHITE = 2, EDGE = 3;
   const TOP = (s) => ((s / N) | 0) * W + (s % N) + W + 1; // 0..80 → padded
   const OUT = new Int16Array(NP).fill(-1);
@@ -152,6 +153,11 @@ function GoEngine(opts) {
     for (let d = 0; d < 4; d++) { const q = p + DIR[d]; if (B.c[q] === col && !seenH.includes(B.head[q])) { seenH.push(B.head[q]); n += B.size[B.head[q]]; } }
     return n;
   }
+  // does col at p capture something?
+  function capturesAt(B, p, col) {
+    for (let d = 0; d < 4; d++) { const q = p + DIR[d]; if (B.c[q] === 3 - col && B.libs[B.head[q]] <= 4 && liberties(B, q, 2) === 1) return true; }
+    return false;
+  }
   // a true eye of col: all four neighbours col (or edge), and enough diagonals
   function isEye(B, p, col) {
     const c = B.c;
@@ -195,6 +201,51 @@ function GoEngine(opts) {
   let seqLen = 0;
   let rs = 0x12345678;
   const rnd = (n) => { rs ^= rs << 13; rs ^= rs >>> 17; rs ^= rs << 5; return ((rs >>> 0) % n); };
+  // ---------- 3×3 patterns (the usual Monte Carlo go shapes: hane, cuts, edge blocks) ----------
+  // Written with X and O for the two colours (either way round), '.' empty, 'x' not X, 'o' not O, '?' anything,
+  // ' ' off the board; the centre is the move. Every rotation, reflection and colour swap counts. Looked up by the
+  // eight neighbours' states (2 bits each: empty, black, white, edge).
+  const PAT_SRC = [
+    ['XOX', '...', '???'], ['XO.', '...', '?.?'], ['XO?', 'X..', 'x.?'], ['.O.', 'X..', '...'],
+    ['XO?', 'O.o', '?o?'], ['XO?', 'O.X', '???'], ['?X?', 'O.O', 'ooo'], ['OX?', 'o.O', '???'],
+    ['X.?', 'O.?', '   '], ['OX?', 'X.O', '   '], ['?X?', 'x.O', '   '], ['?XO', 'x.x', '   '], ['?OX', 'X.O', '   '],
+  ];
+  const N8 = [-W - 1, -W, -W + 1, -1, 1, W - 1, W, W + 1];
+  const PAT = new Uint8Array(65536);
+  {
+    const rot = (g) => [0, 1, 2].map((r) => [0, 1, 2].map((c) => g[2 - c][r]).join(''));
+    const flip = (g) => g.map((row) => row.split('').reverse().join(''));
+    const swap = (g) => g.map((row) => row.replace(/[XOxo]/g, (ch) => ({ X: 'O', O: 'X', x: 'o', o: 'x' }[ch])));
+    const all = [];
+    for (const p0 of PAT_SRC) for (const p1 of [p0, swap(p0)]) {
+      let g = p1;
+      for (let k = 0; k < 4; k++) { all.push(g, flip(g)); g = rot(g); }
+    }
+    const POS = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1], [2, 2]];
+    const ok = (ch, st) => ch === '?' || (ch === '.' && st === 0) || (ch === 'X' && st === 1) || (ch === 'O' && st === 2) || (ch === ' ' && st === 3)
+      || (ch === 'x' && (st === 0 || st === 2)) || (ch === 'o' && (st === 0 || st === 1));
+    for (let code = 0; code < 65536; code++) {
+      for (const g of all) {
+        let m = true;
+        for (let i = 0; i < 8 && m; i++) m = ok(g[POS[i][0]][POS[i][1]], (code >> (2 * i)) & 3);
+        if (m) { PAT[code] = 1; break; }
+      }
+    }
+  }
+  function patAt(B, p) { let code = 0; for (let i = 0; i < 8; i++) code |= B.c[p + N8[i]] << (2 * i); return PAT[code]; }
+  const pcand = new Int16Array(8);
+  // a pattern move next to the last move (not filling my eye, legal, not a big self-atari)
+  function patternMove(B, last, col) {
+    if (last < 0) return -1;
+    let n = 0;
+    for (let i = 0; i < 8; i++) {
+      const q = last + N8[i];
+      if (B.c[q] !== EMPTY || !patAt(B, q) || isEye(B, q, col) || !legalSimple(B, q, col)) continue;
+      if (selfAtari(B, q, col) && joinSize(B, q, col) > 1) continue;
+      pcand[n++] = q;
+    }
+    return n ? pcand[rnd(n)] : -1;
+  }
   // a move worth playing first near the last move: capture a string the last move left in atari, or escape own atari
   function urgent(B, last, col) {
     if (last < 0) return -1;
@@ -217,6 +268,7 @@ function GoEngine(opts) {
     while (passes < 2 && moves < maxMoves) {
       const col = P.stm;
       let m = urgent(P, last, col);
+      if (m < 0 && W_PAT && rnd(100) < 95) m = patternMove(P, last, col);
       if (m < 0) {
         // random among empty points that are legal and not my eye
         let ne = 0;
@@ -282,7 +334,7 @@ function GoEngine(opts) {
     }
     treeReset();
   }
-  const PRIOR_N = 10, RAVE_K = 600;
+  const PRIOR_N = 10, RAVE_K = opts.raveK || 600, UCT_C = opts.uct === undefined ? 0.15 : opts.uct;
   // expand a node for the side to move on B: every legal move (not filling own true eyes) + pass, with priors
   function expand(node, B, last) {
     if (used + N * N + 1 >= MAXN) return false;
@@ -296,7 +348,8 @@ function GoEngine(opts) {
       const r = ((p / W) | 0) - 1, cc = (p % W) - 1;
       if (r === 0 || cc === 0 || r === N - 1 || cc === N - 1) pw -= PRIOR_N * 0.1;
       if (last >= 0 && Math.abs(p - last) <= W + 1 && Math.abs(((p % W) - (last % W))) <= 1) pw += PRIOR_N * 0.1;
-      if (p === urg) { pv += PRIOR_N; pw += PRIOR_N * 0.9; }
+      if (p === urg || capturesAt(B, p, col)) { pv += PRIOR_N; pw += PRIOR_N * 0.9; }
+      else if (W_PAT && last >= 0 && Math.abs(p - last) <= W + 1 && patAt(B, p)) { pv += PRIOR_N; pw += PRIOR_N * 0.8; }
       else if (selfAtari(B, p, col) && joinSize(B, p, col) > 1) { pv += PRIOR_N; pw = 0; }
       nVis[ch] = pv; nWin[ch] = pw;
     }
@@ -313,7 +366,7 @@ function GoEngine(opts) {
       const ch = f + k, v = nVis[ch], q = nWin[ch] / v;
       const rv = rVis[ch], beta = rv / (rv + v + rv * v / RAVE_K);
       const amaf = rv > 0 ? rWin[ch] / rv : q;
-      const val = (1 - beta) * q + beta * amaf + 0.15 * Math.sqrt(lnN / v);
+      const val = (1 - beta) * q + beta * amaf + UCT_C * Math.sqrt(lnN / v);
       if (val > bv) { bv = val; best = ch; }
     }
     return best;

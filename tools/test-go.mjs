@@ -105,12 +105,12 @@ function naiveArea(b) {
 
 // ---------- 3. search ----------
 {
-  // three White stones in the centre with one liberty left: Black to move takes them
+  // White's last move left two Black stones in the centre in atari: Black runs out at (4,3)
   const E = GoEngine();
   const at = (r, c) => r * N + c;
-  for (const m of [at(3, 3), at(4, 3), at(3, 4), at(4, 4), at(3, 5), at(4, 5), at(5, 3), -1, at(5, 4), -1, at(5, 5), -1, at(4, 2), at(8, 8)]) E.play(m);
+  for (const m of [at(4, 4), at(3, 4), at(4, 5), at(3, 5), at(8, 0), at(5, 4), at(8, 1), at(5, 5), at(8, 2), at(4, 6)]) E.play(m);
   const info = E.think({ playouts: 4000 });
-  check(info.move === at(4, 6), `captures the string in atari: ${info.move}`);
+  check(info.move === at(4, 3), `saves the stones in atari: ${info.move}`);
   let wins = 0;
   for (let g = 0; g < 4; g++) {
     const A = GoEngine(), Rr = GoEngine();
@@ -126,7 +126,7 @@ function naiveArea(b) {
     if (blackWon === engBlack) wins++;
   }
   check(wins === 4, `engine won ${wins} of 4 against random`);
-  console.log(`search: captures in atari; ${wins}/4 against random`);
+  console.log(`search: saves stones in atari; ${wins}/4 against random`);
 }
 if (failures) { console.log(`${failures} failed`); process.exit(1); }
 console.log('ok');

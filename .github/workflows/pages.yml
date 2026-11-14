@@ -92,6 +92,10 @@ jobs:
       - name: Test Dots and Boxes engine
         run: node tools/test-dots.mjs
 
+      # every move of random games vs a naive implementation (captures, suicide, superko), area count, dead stones, strength
+      - name: Test Go engine
+        run: node tools/test-go.mjs
+
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright

@@ -84,6 +84,10 @@ jobs:
       - name: Test oware engine
         run: node tools/test-oware.mjs
 
+      # perft vs published counts, every move of random games vs a naive implementation, exact endings vs an exhaustive search, strength
+      - name: Test Reversi engine
+        run: node tools/test-reversi.mjs
+
       - uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright

@@ -1,0 +1,16 @@
+/* Reversi: LOA 튀르크's pen grid on plain paper; discs are hand-coloured like the other games' pieces. */
+.game-reversi .board { height: var(--size); display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); }
+.sq { position: relative; border: 0; padding: 0; margin: 0; background: var(--sheet); cursor: pointer; display: grid; place-items: center; touch-action: manipulation; }
+.sq:focus-visible { outline: 3px dashed var(--pen); outline-offset: -5px; z-index: 2; }
+.sq.last::after { content: ""; position: absolute; inset: 14% 6%; background: var(--marker); border-radius: 40% 10% 45% 12%; transform: rotate(-4deg); pointer-events: none; }
+.disc { width: 74%; height: 74%; border-radius: 48% 52% 46% 54% / 53% 47% 55% 45%; transform: rotate(var(--k)); pointer-events: none; position: relative; z-index: 1; }
+.disc.b { background: var(--ink); box-shadow: inset -3px -4px 0 -2px rgba(255, 255, 255, .12); }
+.disc.w { background: var(--sheet); border: 2.6px solid var(--ink); }
+.dot { width: 20%; height: 20%; border-radius: 45% 55% 50% 50%; background: var(--pen); pointer-events: none; position: relative; z-index: 2; }
+@media (prefers-reduced-motion: no-preference) {
+  .disc.drop { animation: rdrop .28s ease-out; }
+  .disc.flip { animation: rflip .42s ease-in-out both; animation-delay: var(--d, 0ms); }
+}
+@keyframes rdrop { from { transform: rotate(var(--k)) scale(1.35); opacity: .3; } }
+/* turning over: squeeze flat, then open in the new colour (the colour is already the new one; the first half hides it) */
+@keyframes rflip { 0% { transform: rotate(var(--k)) scaleX(1); filter: invert(1); } 49% { filter: invert(1); } 50% { transform: rotate(var(--k)) scaleX(.05); filter: none; } 100% { transform: rotate(var(--k)) scaleX(1); } }

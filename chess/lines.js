@@ -1,18 +1,30 @@
 // Chess lines, added to shared/lines.js. Penopi is Turk under another name, and the Turk was a chess automaton,
-// so here it boasts of 1770 again (the lines LOA 튀르크 had and the other games dropped).
+// so here it boasts of 1770 again (the lines LOA 튀르크 had and the other games dropped). Penopi is also still
+// "practising" chess (no record kept, game.practice), and says so.
 // When: chess/game.js. {pc}: a piece's name.
 export const LINES = {
+  // Penopi is still "practising" chess (the user's concept): no record is kept, and it says so
+  $replace: ['pick', 'startHuman', 'startEngine'],
+  practiceHello: [
+    "체스는 아직 연습 중이야. 그러니까 여기선 전적 안 적어. 너도 마음 편히 둬.",
+    "연습 판이야. 이겨도 져도 기록엔 안 남아. 나한테 좋은 일이지.",
+    "1770년부터 뒀는데 아직 연습 중이야. 체스가 원래 그래.",
+  ],
   pick: [
-    "백 할래, 흑 할래? 나는 1770년부터 체스 뒀어.",
-    "선공이든 후공이든 골라. 체스는 내 본업이야.",
+    "백 할래, 흑 할래? 연습 판이니까 아무거나.",
+    "골라. 지금은 연습이라 져도 안 적어. 나도, 너도.",
   ],
   startHuman: [
-    "백이니까 먼저 둬. 첫 수부터 실수하지 마.",
-    "먼저 가. 오프닝 책 다 외웠어. 거의.",
+    "백이니까 먼저 둬. 나는 연습하는 중이니까 살살... 은 안 해.",
+    "먼저 가. 오프닝 공부 좀 했거든. 확인해 봐.",
   ],
   startEngine: [
-    "백은 내가. 1770년부터 하던 대로 간다.",
-    "내가 먼저 둔다. 나폴레옹 때처럼.",
+    "내가 먼저 둔다. 요즘 연습하는 오프닝이 있어.",
+    "백은 내가. 연습한 거 보여 줄게.",
+  ],
+  humanWin: [
+    "...연습 판이라 다행이다. 안 적는 거 맞지?",
+    "이건 연습이었어. 진짜 판은 다음에.",
   ],
   engineCheck: [
     "체크.",

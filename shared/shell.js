@@ -13,6 +13,8 @@
 //                 (e.g. a rule set), remembered in this browser; start(side, opts) gets {key: chosen id}
 //   longGame      plies after which "longGame" may be said
 //   legacyRecord  optional localStorage key of an older record to take over
+//   practice      optional true: Penopi is still practising this game, so no record is kept (and none is talked
+//                 about); the first line is 'practiceHello'
 //   mount(api)    draws the starting position; api is below
 //   start(side)   a side was picked: play (call api.yourTurn / api.engineTurn / api.over as it goes)
 //   reset()       new game: stop thinking, show the starting position (pickers come back)
@@ -30,7 +32,9 @@ export function boot(game) {
   document.title = `${game.name} · ${NAME}`;
   const lines = mergeLines(COMMON, game.lines);
   const topics = CHAT.concat(game.chat || []);
-  const record = loadRecord(game.id, game.legacyRecord), rec = record.rec;
+  // a practice game keeps no record: a blank one that is never saved
+  const record = game.practice ? { rec: { games: 0, penopi: 0, human: 0, draws: 0, streak: 0, hstreak: 0 }, add: () => 0, reset() {} } : loadRecord(game.id, game.legacyRecord);
+  const rec = record.rec;
   visit();
 
   document.body.insertAdjacentHTML('afterbegin', `
@@ -52,7 +56,7 @@ export function boot(game) {
   <p class="snark" id="rules-snark"></p>
   <ol>${game.rules.html}</ol>
   ${game.rules.note ? `<p class="note">${game.rules.note}</p>` : ''}
-  <div class="record"><span id="record"></span><button type="button" class="btn quiet" id="btn-reset">전적 지우기</button>
+  <div class="record"><span id="record"></span><button type="button" class="btn quiet" id="btn-reset"${game.practice ? ' hidden' : ''}>전적 지우기</button>
     <p class="snark" id="reset-snark" aria-live="polite" hidden></p></div>
   <div class="foot"><a class="btn quiet" href="../">다른 게임</a><form method="dialog"><button class="btn small">알겠어</button></form></div>
 </dialog>`);
@@ -247,7 +251,7 @@ export function boot(game) {
   const rulesEl = $('rules'), resetBtn = $('btn-reset');
   let rulesSeen = 0, wiped = false;
   function showRecord() {
-    $('record').textContent = `전적: ${NAME} ${rec.penopi}승 · 너 ${rec.human}승${rec.draws ? ` · 무승부 ${rec.draws}` : ''}`;
+    $('record').textContent = game.practice ? `${NAME}가 아직 연습 중이라 전적은 안 적어.` : `전적: ${NAME} ${rec.penopi}승 · 너 ${rec.human}승${rec.draws ? ` · 무승부 ${rec.draws}` : ''}`;
     resetBtn.textContent = '전적 지우기'; resetBtn.dataset.armed = '';
   }
   function resetSnark(key) {
@@ -283,7 +287,8 @@ export function boot(game) {
   globalThis.__penopi = { debug: () => (game.debug ? game.debug() : null) };
   // the first line knows whether we've met here, and how long ago
   const away = rec.last ? Math.floor((Date.now() - rec.last) / 86400000) : 0;
-  if (!rec.games) say('firstVisit');
+  if (game.practice) say('practiceHello');
+  else if (!rec.games) say('firstVisit');
   else if (away >= 1) say('welcomeBack', { days: away, w: rec.penopi, l: rec.human });
   else say('pick');
   return api;

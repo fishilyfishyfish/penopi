@@ -287,6 +287,7 @@ function stop() { g++; ponder = null; inBook = true; firstSearch = false; if (en
 export default {
   id: 'chess',
   name: '체스',
+  practice: true, // still practising: no record (shared/shell.js)
   sides: [
     { id: 0, first: true, html: '<span class="chip w"></span>백 · 선공' },
     { id: 8, first: false, html: '<span class="chip b"></span>흑 · 후공' },

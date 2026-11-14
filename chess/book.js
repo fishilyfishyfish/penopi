@@ -13,7 +13,7 @@ export const BOOK = [
   // 1.e4 e5
   'e4 e5 Nf3 Nc6 Bb5 a6 Bxc6 dxc6 O-O f6 d4 exd4 Nxd4 c5 Nb3 Qxd1 Rxd1',
   'e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Nxe4 d4 b5 Bb3 d5 dxe5 Be6 c3 Bc5',
-  'e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Na5 Bb5+ c6 dxc6 bxc6 Be2 h6 Nf3 e4 Ne5',
+  'e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Na5 Bb5+ c6 dxc6 bxc6 Be2 h6',
   'e4 e5 Nf3 Nc6 Bc4 Bc5 b4 Bxb4 c3 Ba5 d4 exd4 O-O',
   'e4 e5 Nc3 Nf6 f4 d5 fxe5 Nxe4 Nf3 Be7 d4 O-O Bd3',
   'e4 e5 Nf3 d6 d4 Nf6 Nc3 Nbd7 Bc4 Be7 O-O O-O Re1 c6 a4',
@@ -119,8 +119,8 @@ export const BOOK = [
   'b: e4 e5 f4 exf4 Nf3 d6 d4 g5 h4 g4 Ng1 Nf6',
   'b: e4 e5 f4 d5 exd5 exf4 Nf3 Nf6 c4 c6 d4 cxd5',
   'b: e4 e5 Nc3 Nf6 Bc4 Nxe4 Qh5 Nd6 Bb3 Nc6 Nb5 g6 Qf3 f5 Qd5 Qe7 Nxc7+ Kd8 Nxa8 b6',
-  'b: e4 e5 Nf3 Nc6 c3 Nf6 d4 Nxe4 d5 Ne7 Nxe5 Ng6 Qd4 Qf6',
-  'b: e4 e5 Nf3 Nc6 Bc4 Bc5 b4 Bxb4 c3 Ba5 d4 d6 Qb3 Qd7 dxe5 Bb6',
+  'b: e4 e5 Nf3 Nc6 c3 Nf6 d4 Nxe4 d5',
+  'b: e4 e5 Nf3 Nc6 Bc4 Bc5 b4 Bxb4 c3 Ba5 d4 exd4 O-O Nge7',
   'b: e4 e5 Nf3 Nc6 d4 exd4 c3 d5 exd5 Qxd5 cxd4 Bg4 Be2 Bb4+ Nc3 Bxf3 Bxf3 Qc4',
   'b: e4 e5 Nf3 Nc6 Bc4 Nf6 Ng5 d5 exd5 Na5 d3 h6 Nf3 e4 Qe2 Nxc4 dxc4 Bc5',
   // Sicilian main lines and sidelines
@@ -205,7 +205,7 @@ export const BOOK = [
   // Dutch, Benoni and others with 1.d4 (Penopi meets them as White)
   'w: d4 f5 g3 Nf6 Bg2 g6 Nf3 Bg7 O-O O-O c4 d6 Nc3 Qe8 d5 a5',
   'w: d4 f5 g3 Nf6 Bg2 e6 Nf3 Be7 O-O O-O c4 d6 Nc3 Qe8 b3 a5 Ba3',
-  'w: d4 e6 c4 b6 e4 Bb7 Bd3 Nc6 Nf3 Nb4 Be2',
+  'w: d4 e6 c4 b6 e4 Bb7 Bd3 Nc6 Nf3 Nb4',
   'w: d4 c5 d5 e5 e4 d6 Nc3 Be7 Nf3 Bg4 Be2 Bxf3 Bxf3',
   'w: d4 g6 c4 Bg7 Nc3 d6 e4 Nc6 Be3 e5 d5 Nce7 Nf3',
   'w: d4 b5 e4 Bb7 Bxb5 Bxe4 Nf3 e6 O-O Nf6',
@@ -226,5 +226,5 @@ export const BOOK = [
   'b: Nc3 d5 e4 d4 Nce2 e5 Ng3 Be6 Nf3 Nd7 Bb5 f6',
   'b: d3 e5 Nf3 Nc6 g3 d5 Bg2 Nf6 O-O Be7 c4 O-O',
   'b: a3 e5 c4 Nf6 Nc3 d5 cxd5 Nxd5 e3 Nxc3 bxc3 Bd6',
-  'b: h3 e5 e4 Nf6 Nc3 Bb4 Bd3 d5 exd5 Nxd5 Nf3 Nc6',
+  'b: h3 e5 e4 Nf6 Nc3 Bb4 Bd3 d5 exd5 Nxd5 Nf3',
 ];

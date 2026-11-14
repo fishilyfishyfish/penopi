@@ -17,8 +17,8 @@ pc = animate(perch, (k, v) => talk.say(k, v));
 let w = 0, l = 0;
 shelf.innerHTML = GAMES.map((game) => {
   const { rec } = loadRecord(game.id);
-  w += rec.penopi; l += rec.human;
-  const r = rec.games ? `${NAME} ${rec.penopi}승 · 너 ${rec.human}승` : '아직 안 둬 봤어';
+  if (!game.practice) { w += rec.penopi; l += rec.human; }
+  const r = game.practice ? `${NAME} 연습 중 · 전적 안 적음` : rec.games ? `${NAME} ${rec.penopi}승 · 너 ${rec.human}승` : '아직 안 둬 봤어';
   return `<a class="card" href="${game.id}/" data-id="${game.id}">
     <img src="${game.id}/thumb.svg" alt="" width="88" height="88">
     <div><h2>${game.name}</h2><p>${game.blurb}</p><p class="rec">${r}</p></div></a>`;

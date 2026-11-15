@@ -206,6 +206,13 @@ function JanggiEngine(opts) {
     return false;
   }
   const inCheck = (c = side) => attacked(kingSq[c >> 3], c ^ 8);
+  // attacked including by 궁·사 (for a point inside their palace): is a capture there answered by a capture?
+  function defended(s, by) {
+    if (attacked(s, by)) return true;
+    const k = KMOVES[by >> 3][s];
+    for (let i = 0; i < k.length; i++) { const q = board[k[i]]; if (q === (by | GUA) || q === (by | GEN)) return true; }
+    return false;
+  }
   function facing() {
     const a = kingSq[0], b = kingSq[1];
     if (fileOf(a) !== fileOf(b)) return false;
@@ -346,10 +353,11 @@ function JanggiEngine(opts) {
     att: prm('palace attack units', lin(16, (u) => (u < 2 ? 0 : -Math.min(300, u * u * 3)))),
     noGuard: prm('missing 사 (enemy has a 차)', [-30]),
     canFew: prm('포 per missing piece', [-4]),
+    solPair: prm('졸 with a 졸 beside it', [6]),
     tempo: prm('tempo', [12]),
   };
   for (let t = 1; t <= 7; t++) O.pst.push(prm('pst ' + t, pstInit[t]));
-  const TUNED = null; // tuned-params
+  const TUNED = [0,98,163,158,281,346,707,0,0,0,0,4,1,2,5,0,-18,-7,-23,-38,-47,-67,-99,-130,-184,-240,-299,-300,-300,-300,-300,-300,-23,-1,5,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,-6,1,19,16,-11,-9,14,21,39,5,2,18,35,33,27,28,34,53,49,40,39,50,58,54,32,26,27,43,50,15,15,7,23,23,0,0,0,11,-2,0,0,0,6,17,0,0,0,-10,-19,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-3,-6,4,3,1,4,1,2,6,5,6,8,17,9,11,4,11,11,8,14,0,13,18,11,-3,8,25,15,17,8,14,16,-1,7,-1,2,7,3,4,-6,-3,-2,1,0,-3,-13,-4,-4,-4,-14,-12,-3,2,12,-14,4,18,29,11,-7,11,20,27,30,4,15,17,27,30,6,19,19,24,14,3,30,24,36,36,10,22,36,29,34,13,25,31,34,34,14,28,27,33,36,4,15,25,23,26,-2,9,3,30,37,1,8,-3,20,15,14,3,-2,22,42,1,-7,-4,-3,11,2,-12,-10,3,19,-12,-9,-4,2,-1,4,-20,-15,7,15,-3,-14,-9,5,14,-9,-20,-9,2,12,-9,-11,-5,-2,12,-3,-5,11,5,4,-5,-12,-8,-13,-3,18,9,10,4,6,12,8,6,6,6,-13,4,8,1,5,1,0,9,15,7,20,17,17,21,16,16,7,3,20,15,-8,1,11,16,14,3,15,7,19,14,0,0,0,3,32,0,0,0,4,33,0,0,0,-21,-36,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]; // tuned-params
   const PV = Int32Array.from(TUNED && TUNED.length === PN ? TUNED : PINIT);
   if (opts.params) PV.set(opts.params);
   const ATT_U = [0, 1, 0, 1, 2, 2, 3, 0]; // attack units on the palace by attacker type
@@ -371,7 +379,11 @@ function JanggiEngine(opts) {
       tr(O.mat + t, sg); tr(O.pst[t] + k, sg);
       if (t === CAN) { v += sg * PV[O.canFew] * (30 - pieces); tr(O.canFew, sg * (30 - pieces)); }
       if (t === SOL || t === GUA || t === GEN) {
-        if (t === SOL && PALACE[s] === 2 - ci) units[ci] += 1; // a 졸 inside the enemy palace
+        if (t === SOL) {
+          if (PALACE[s] === 2 - ci) units[ci] += 1; // a 졸 inside the enemy palace
+          const f = fileOf(s);
+          if (f < 8 && board[s + 1] === p) { v += sg * PV[O.solPair]; tr(O.solPair, sg); } // counted once per pair
+        }
         continue;
       }
       // mobility and hits on the enemy palace
@@ -421,7 +433,7 @@ function JanggiEngine(opts) {
   const KIL = new Int32Array((MAXPLY + 8) * 2), HIST = new Int32Array(16 * 128), CM = new Int32Array(16 * 128);
   const LMR = [];
   for (let d = 0; d < 64; d++) { LMR.push(new Int8Array(64)); for (let i = 1; i < 64; i++) LMR[d][i] = d && i ? Math.floor(0.6 + Math.log(d) * Math.log(i) / 2.2) : 0; }
-  const W = Object.assign({ rfp: 1, fut: 1, lmp: 1, nul: 1, iid: 1, asp: 1, cm: 1 }, opts.weights || {});
+  const W = Object.assign({ rfp: 1, fut: 1, lmp: 1, nul: 1, iid: 1, asp: 1, cm: 1, bad: 1 }, opts.weights || {});
   const RFP_MARGIN = 90, FUT_MARGIN = [0, 120, 220, 320], LMP = [0, 6, 10, 16, 24];
   const VICTIM = [0, 100, 170, 170, 300, 380, 650, 5000];
   let nodes = 0, deadline = 0, stopped = false, maxNodes = 0, rootBest = 0;
@@ -437,7 +449,11 @@ function JanggiEngine(opts) {
       let v;
       if (m === ttMove) v = 1 << 30;
       else if (m === PASS) v = -(1 << 24);
-      else if (isCap(m)) v = (1 << 28) + VICTIM[board[mTo(m)] & 7] * 8 - (board[mFrom(m)] & 7);
+      else if (isCap(m)) {
+        const vv = VICTIM[board[mTo(m)] & 7], av = VICTIM[board[mFrom(m)] & 7], mvv = vv * 8 - (board[mFrom(m)] & 7);
+        // a cheaper piece on a defended point: after the quiet moves (and left out of the quiescence search)
+        v = W.bad && vv < av && defended(mTo(m), side ^ 8) ? -(1 << 20) + mvv : (1 << 28) + mvv;
+      }
       else if (m === KIL[p * 2]) v = 1 << 27;
       else if (m === KIL[p * 2 + 1]) v = (1 << 27) - 1;
       else if (W.cm && m === cmMove) v = (1 << 27) - 2;
@@ -479,6 +495,7 @@ function JanggiEngine(opts) {
     for (let i = 0; i < n; i++) {
       const m = pick(n, p, i);
       if (!full && best + VICTIM[board[mTo(m)] & 7] + 200 < alpha) continue; // delta pruning
+      if (!full && SC[p][i] < 0) continue; // a losing capture
       make(m);
       if (inCheck(side ^ 8) || (fc && facing())) { unmake(); continue; }
       legal++; ply++;

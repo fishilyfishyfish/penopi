@@ -84,6 +84,17 @@ export function boot(game) {
 
   // ---------- a game in progress ----------
   let started = false, gameId = 0, side = null;
+  // leaving a game I've started playing counts as a loss (no escaping a lost game by "새 게임", reloading or closing):
+  // `inPlay` from my first move until the end; the same fact in localStorage in case the page goes away unnoticed
+  const liveKey = `penopi.${game.id}.live`;
+  let inPlay = false, armed = 0;
+  const setLive = (on) => { inPlay = on; if (!game.practice) store.set(liveKey, on ? Date.now() : 0); };
+  function forfeit() { // record the abandoned game as Penopi's win
+    if (!inPlay) return false;
+    setLive(false);
+    if (!game.practice) record.add('penopi');
+    return true;
+  }
   let prevP = null, flags = {}, turnStart = 0, slowTimer = 0, chatTimer = 0, winTimer = 0;
   const stopTimers = () => { clearTimeout(slowTimer); clearTimeout(chatTimer); };
 
@@ -133,6 +144,7 @@ export function boot(game) {
     },
     // after my move. facts: [[key, vars, chance], ...] in priority order; plies: moves played so far
     humanMoved({ facts = [], plies = 0 } = {}) {
+      if (!inPlay && started) setLive(true);
       const elapsed = turnStart ? Date.now() - turnStart : 99999;
       stopTimers(); turnStart = 0;
       for (const [key, vars, chance = 1] of facts) if (Math.random() < chance && sayMove(key, vars)) return;
@@ -171,6 +183,7 @@ export function boot(game) {
     // the game is over. winner: 'human' | 'penopi' | 'draw'; vars fill the lines ({n} moves etc.);
     // key: a more specific line to try first (e.g. 'engineWinGammon', or a draw's reason)
     over({ winner, vars = {}, key, text }) {
+      setLive(false); disarm();
       stopTimers(); turnStart = 0;
       pc.thinking(false);
       const broke = record.add(winner);
@@ -216,6 +229,28 @@ export function boot(game) {
     requestAnimationFrame(() => pc.place(pc.x)); // the board just grew
     game.start(side, { ...opts });
   }
+  // "새 게임" in the middle of a game: the first press warns, the second resigns (a loss) and starts over
+  const newBtn = $('btn-new');
+  function disarm() { if (armed) { clearTimeout(armed); armed = 0; newBtn.textContent = '새 게임'; newBtn.classList.remove('warn'); } }
+  function onNew() {
+    if (inPlay && !game.practice) {
+      if (!armed) {
+        newBtn.textContent = '기권하고 새 게임'; newBtn.classList.add('warn');
+        armed = setTimeout(disarm, 5000);
+        say('abandonArm');
+        return;
+      }
+      disarm();
+      forfeit();
+      newGame();
+      say('abandonLoss');
+      return;
+    }
+    disarm();
+    setLive(false);
+    newGame();
+  }
+  addEventListener('pagehide', () => { if (forfeit() && !game.practice) store.set(`penopi.${game.id}.left`, 1); }); // remembered for the next visit's first line
   function newGame() {
     gameId++;
     started = false; side = null;
@@ -246,13 +281,13 @@ export function boot(game) {
   }));
   showOpts();
   api.options = opts;
-  $('btn-new').addEventListener('click', newGame);
+  newBtn.addEventListener('click', onNew);
 
   // ---------- rules sheet and record ----------
   const rulesEl = $('rules'), resetBtn = $('btn-reset');
   let rulesSeen = 0, wiped = false;
   function showRecord() {
-    $('record').textContent = game.practice ? `${NAME}가 아직 연습 중이라 전적은 안 적어.` : `전적: ${NAME} ${rec.penopi}승 · 너 ${rec.human}승${rec.draws ? ` · 무승부 ${rec.draws}` : ''}`;
+    $('record').textContent = game.practice ? `${NAME}가 아직 연습 중이라 전적은 안 적어.` : `전적: ${NAME} ${rec.penopi}승 · 너 ${rec.human}승${rec.draws ? ` · 무승부 ${rec.draws}` : ''} (두다 말고 나가면 진 걸로 적어)`;
     resetBtn.textContent = '전적 지우기'; resetBtn.dataset.armed = '';
   }
   function resetSnark(key) {
@@ -288,7 +323,12 @@ export function boot(game) {
   globalThis.__penopi = { debug: () => (game.debug ? game.debug() : null) };
   // the first line knows whether we've met here, and how long ago
   const away = rec.last ? Math.floor((Date.now() - rec.last) / 86400000) : 0;
-  if (game.practice) say('practiceHello');
+  // a game left unfinished last time (the page went away without telling): it was a loss
+  const leftOver = !game.practice && store.get(liveKey, 0), leftKey = `penopi.${game.id}.left`, left = !game.practice && store.get(leftKey, 0);
+  if (leftOver) { store.set(liveKey, 0); record.add('penopi'); }
+  if (left) store.set(leftKey, 0);
+  if (leftOver || left) say('abandonedLast');
+  else if (game.practice) say('practiceHello');
   else if (!rec.games) say('firstVisit');
   else if (away >= 1) say('welcomeBack', { days: away, w: rec.penopi, l: rec.human });
   else say('pick');

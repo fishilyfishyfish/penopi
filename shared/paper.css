@@ -130,3 +130,5 @@ button { font-family: inherit; }
 @media (max-width: 420px) {
   .bubble { font-size: 18px; }
 }
+/* "새 게임" armed in the middle of a game: the next press resigns */
+.btn.warn { color: var(--pen); border-color: var(--pen); box-shadow: 3px 4px 0 var(--pen); }

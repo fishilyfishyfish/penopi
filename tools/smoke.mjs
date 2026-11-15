@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { backgammon: 9000, oware: 9000, reversi: 9000, dots: 12000, go: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { backgammon: 9000, oware: 9000, reversi: 9000, dots: 12000, go: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000, janggi: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -104,6 +104,10 @@ async function boardGame(id, sideIdx) {
       await sq(d.cells[m & 127]).click();
       await sq(d.cells[(m >> 7) & 127]).click();
       if ((await dbg(p)).promo) await p.click(`#tray [data-promo="${(m >> 14) & 7}"]`);
+    } else if (id === 'janggi') { // moves: from | to << 7 (points rank*9+file); d.cells maps a point to its button
+      const m = d.legal[Math.floor(Math.random() * d.legal.length)];
+      await sq(d.cells[m & 127]).click();
+      await sq(d.cells[(m >> 7) & 127]).click();
     } else if (id === 'draughts') { // moves: {from, to, path}; tap the piece, the squares on the way, the end
       const m = d.legal[Math.floor(Math.random() * d.legal.length)];
       await sq(d.cells[m.from]).click();
@@ -172,6 +176,8 @@ await boardGame('oware', 1);
 await boardGame('reversi', 1);
 await boardGame('dots', 1);
 await boardGame('go', 1);
+await boardGame('janggi', 1);
+await boardGame('janggi', 0);
 await backgammon(1);
 await browser.close();
 server.close();

@@ -1,6 +1,10 @@
-// Shogi lines, added to shared/lines.js. All new. Penopi plays it with confidence (chess is the game it is worst at).
+// Shogi lines, added to shared/lines.js. All new. Penopi is still learning shogi (no record kept, game.practice).
 // When: shogi/game.js. {n}: moves.
 export const LINES = {
+  practiceHello: [
+    "쇼기는 아직 배우는 중이야. 잡은 말을 다시 쓰는 게 어려워. 그래서 전적은 안 적어.",
+    "잡은 말이 내 말이 된다니 신기하지? 나도 연습 중이야.",
+  ],
   pick: ["선수가 먼저 둬. 후수가 편한 날도 있어. 골라.", "잡은 말을 내 말로 쓰는 게임이야. 먼저 할래, 나중에 할래?"],
   startHuman: ["선수니까 먼저 둬. 보부터 밀어도 좋고, 각 길부터 열어도 좋아.", "먼저 해. 이 게임은 잡은 말이 곧 내 말이라서, 하나 잡힌 게 둘 잃은 거야.", "네 차례야. 왕은 일찍 안전하게 해 두는 게 좋아."],
   startEngine: ["내가 선수. 먼저 간다.", "선수는 내가 할게. 잡은 말 잘 쓰는 사람이 이겨."],

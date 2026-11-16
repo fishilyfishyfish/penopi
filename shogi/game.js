@@ -289,6 +289,7 @@ function stop() { g++; if (engine) engine.restart(); }
 
 export default {
   id: 'shogi',
+  practice: true, // Penopi is still learning: no record (shared/shell.js)
   name: '쇼기',
   sides: [
     { id: SENTE, first: true, html: '<span class="chip b"></span>선수 · 먼저' },

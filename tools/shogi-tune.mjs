@@ -50,7 +50,7 @@ function loss(P, K, val) {
 }
 // the curve's steepness that fits the starting parameters best
 let K = 1, best = Infinity;
-for (let k = 0.3; k <= 2.5; k += 0.05) { const L = loss(P0, k, false); if (L < best) { best = L; K = k; } }
+for (let k = 0.04; k <= 2.5; k += 0.02) { const L = loss(P0, k, false); if (L < best) { best = L; K = k; } }
 console.log(`K = ${K.toFixed(2)}, start loss train ${best.toFixed(6)}, validation ${loss(P0, K, true).toFixed(6)}`);
 
 const P = Float64Array.from(P0), g = new Float64Array(NP), m1 = new Float64Array(NP), m2 = new Float64Array(NP);

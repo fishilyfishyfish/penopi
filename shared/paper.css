@@ -1,6 +1,6 @@
 /* Penopi: a sketchbook page. Pen lines on paper, a doodle peeking over the board.
    Shared by the lobby and every game page. Taken from LOA 튀르크 (fishilyfishyfish/LOA_turk) as it was.
-   Penopi font (drawn by the site owner, fonts/Penopi.woff2), cut down to Latin, punctuation and the 2,350 common Hangul syllables;
+   Penopi font (drawn by the site owner, fonts/Penopi.woff2), cut down to Latin, punctuation and all 11,172 Hangul syllables;
    Gaegu (SIL OFL, fonts/OFL.txt) is the fallback. A character outside that set falls back to the system font
    (tools/check-lines.py keeps the lines inside it). One weight only, so bold maps to the same file (no faux bold). */
 @font-face { font-family: "Penopi Local"; font-weight: 400; font-display: swap; size-adjust: 125%; src: url("fonts/Penopi.woff2") format("woff2"); }

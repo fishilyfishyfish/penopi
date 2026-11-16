@@ -5,6 +5,7 @@
 // Before the game I pick my 상차림 (option); Penopi picks its own at random.
 import { LINES } from './lines.js';
 import { BOOK } from './book.js';
+import { GLYPHS } from '../shared/glyphs.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
@@ -14,7 +15,12 @@ const R = globalThis.JanggiEngine({ ttBits: 8 });
 const { CHO, HAN, SOL, GUA, ELE, HOR, CAN, CHA, GEN, MATE, MATE_BOUND, COUNT_WIN, PASS, mFrom, mTo, isCap } = R;
 const NAMES = ['', '졸', '사', '상', '마', '포', '차', '궁'];
 const pieceName = (p) => ((p & 7) === SOL && (p & 8) === HAN ? '병' : NAMES[p & 7]);
-const glyph = (p) => ((p & 7) === GEN ? ((p & 8) === CHO ? '초' : '한') : pieceName(p));
+// the piece's name as a drawing (shared/glyphs.js), in hangul or hanja (option '말 글씨'): no font needed
+const HANJA = ['', '卒', '士', '象', '馬', '包', '車', ''];
+let script = 'hangul';
+const glyph = (p) => (script === 'hanja'
+  ? ((p & 7) === GEN ? ((p & 8) === CHO ? '楚' : '漢') : (p & 7) === SOL && (p & 8) === HAN ? '兵' : HANJA[p & 7])
+  : ((p & 7) === GEN ? ((p & 8) === CHO ? '초' : '한') : pieceName(p)));
 const sideName = (c) => (c === CHO ? '초' : '한');
 const colorOf = (c) => (c === CHO ? 'cho' : 'han');
 const ARR_NAMES = ['마상마상', '상마상마', '마상상마', '상마마상'];
@@ -204,7 +210,7 @@ function pieceSvg(p) {
   const k = SIZE[p & 7], c = 50, rr = 46 * k, a = rr * 0.414; // a regular octagon of "radius" rr
   const pts = [[-a, -rr], [a, -rr], [rr, -a], [rr, a], [a, rr], [-a, rr], [-rr, a], [-rr, -a]].map(([x, y]) => `${(c + x).toFixed(1)},${(c + y).toFixed(1)}`).join(' ');
   const fs = (p & 7) === GEN ? 44 : 40 * k / 0.78;
-  return `<svg class="jp ${colorOf(p & 8)}" viewBox="0 0 100 100" aria-hidden="true"><polygon points="${pts}"/><polygon class="in" points="${pts}" transform="translate(50 50) scale(.8) translate(-50 -50)"/><text x="50" y="${50 + fs * 0.34}" font-size="${fs.toFixed(1)}" text-anchor="middle">${glyph(p)}</text></svg>`;
+  return `<svg class="jp ${colorOf(p & 8)}" viewBox="0 0 100 100" aria-hidden="true"><polygon points="${pts}"/><polygon class="in" points="${pts}" transform="translate(50 50) scale(.8) translate(-50 -50)"/><path class="g ${script}" d="${GLYPHS[script][glyph(p)]}" transform="translate(50 50) scale(${(fs / 100 * (script === 'hanja' ? 1.12 : 1.05)).toFixed(3)}) translate(-50 -50)"/></svg>`;
 }
 function build() {
   const W = 900, H = 1000, j = (k, i) => { const x = Math.sin(i * 12.9898 + 7.1) * 43758.5453; return (x - Math.floor(x) - 0.5) * k; };
@@ -272,8 +278,12 @@ export default {
     { id: CHO, first: true, html: '<span class="chip cho"></span>초 · 선공' },
     { id: HAN, first: false, html: '<span class="chip han"></span>한 · 후공' },
   ],
-  options: [{ key: 'arr', label: '내 상차림', choices: ARR_NAMES.map((n, i) => ({ id: String(i), html: n })), default: '2' }],
-  optionChanged(key, val) { if (key === 'arr' && !playing) { myArr = Number(val); state = replay(); render(); } },
+  options: [{ key: 'arr', label: '내 상차림', choices: ARR_NAMES.map((n, i) => ({ id: String(i), html: n })), default: '2' },
+    { key: 'script', label: '말 글씨', choices: [{ id: 'hangul', html: '한글' }, { id: 'hanja', html: '한자' }], default: 'hangul' }],
+  optionChanged(key, val) {
+    if (key === 'arr' && !playing) { myArr = Number(val); state = replay(); render(); }
+    if (key === 'script') { script = val === 'hanja' ? 'hanja' : 'hangul'; render(); }
+  },
   lines: LINES,
   chat: ['chatJanggi'],
   longGame: 90,
@@ -297,6 +307,7 @@ export default {
   mount(a) {
     api = a; boardEl = a.board;
     myArr = Number((a.options && a.options.arr) || 2);
+    script = a.options && a.options.script === 'hanja' ? 'hanja' : 'hangul';
     build();
     state = replay();
     render();
@@ -304,6 +315,7 @@ export default {
   start(side, opts) {
     stop();
     human = side; myArr = Number((opts && opts.arr) || 2); penArr = Math.floor(Math.random() * 4);
+    script = opts && opts.script === 'hanja' ? 'hanja' : 'hangul';
     moves = []; sel = -1; playing = true; prevCapture = null;
     clearDoodles();
     boardEl.setAttribute('aria-label', `장기 판, 나는 ${sideName(side)}, 내 상차림 ${ARR_NAMES[myArr]}, ${api.name} 상차림 ${ARR_NAMES[penArr]}`);

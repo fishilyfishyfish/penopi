@@ -40,6 +40,7 @@ shared/
   engine.js            워커 래퍼(id 요청/응답, 시간 초과 시 워커 종료·재시작)
   record.js            게임별 전적(localStorage `penopi.<id>.record`), 마지막 방문
   sketch.js            손그림 격자, 연필 궤적, 지우개, 말 뛰기
+  glyphs.js            말 이름 글자를 SVG 선으로(tools/glyphs.py가 만듦): 폰트가 안 떠도 똑같이 보인다
   offline.js           서비스 워커 등록
 backgammon/ breakthrough/ draughts/ chess/ gomoku/ morris/ morris6/ morris12/ oware/ reversi/ dots/ go/ janggi/ yukgak/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
   backgammon/engine/         backgammon-palamedes engine/ 그대로 (06492c2), backgammon/rust-toolchain.toml도
@@ -59,6 +60,7 @@ backgammon/ breakthrough/ draughts/ chess/ gomoku/ morris/ morris6/ morris12/ ow
 tools/
   build-wasm.sh        백개먼 엔진 WASM 빌드
   check-lines.py       화면에 나오는 한글이 전부 폰트 안에 있는지
+  glyphs.py            폰트의 글자 몇 개를 SVG 선으로 바꿔 shared/glyphs.js를 만든다(말 글씨용)
   smoke.mjs            Chromium으로 로비 + 모든 게임을 실제로 두어 봄(오류, 응답 시간)
   verify-engines.mjs   원래 레포 엔진과 같은 수·같은 평가가 나오는지
   test-breakthrough.mjs  브레이크스루 엔진 테스트(CI): 단순 구현과 수 생성 비교, 강제승 탐색 vs 단순 탐색기, 무작위·탐욕 상대 전승
@@ -418,6 +420,10 @@ tools/
 - 화면: 9×10 펜 격자 + 궁성 대각선, 말은 선이 만나는 점에 팔각형(궁 크게, 차포마상 중간, 사졸 작게)과 펜 글씨(초는 잉크, 한은 빨간 펜; 궁은 "초"/"한", 한의 졸은 "병").
   말 → 갈 점(빨간 점, 잡기는 점선 동그라미). 판 아래 "한수 쉼"(빅장 중이면 "한수 쉼 · 점수 세기"). 장군이면 궁에 빨간 동그라미와 "장군!". 내가 한이면 판을 180° 돌린다.
   상차림 단추를 누르면 대국 전 판에 바로 보여 준다(`optionChanged`).
+- 말 글씨는 폰트가 아니라 그림이다(2026-11-16, 사용자 요청: 폰트 의존 줄이기). `tools/glyphs.py`가 글자 모양을 SVG 선으로 뽑아 `shared/glyphs.js`에 넣고
+  말은 `<path>`로 그린다. 옵션 "말 글씨": 한글(기본, Gaegu Bold에서) / 한자(楚漢車包馬象士卒兵, Zen Kurenaido에서: npm `@fontsource/zen-kurenaido`, OFL).
+  Gaegu에는 한자가 없고, 나눔손글씨 웹 배포본에도 없었다. 폰트 파일을 막고 찍어도 둘 다 그대로 나온다. 샹치·쇼기를 넣을 때 같은 도구로 글자를 더 뽑으면 된다.
+  대사 폰트를 새로 만드는 건 하지 않기로 했다(일이 크고 Gaegu보다 나빠짐). 사용자가 직접 만든 폰트 파일을 주면 서브셋으로 넣는다.
 
 ## 육각잇기 엔진 (2026-11-16, 사용자 요청으로 새로 만듦)
 
@@ -470,6 +476,7 @@ python3 tools/assemble.py _site                # 배포본 미리 보기
 ## 라이선스
 
 - 폰트: Gaegu, SIL Open Font License 1.1 (`shared/fonts/OFL.txt`). LOA_turk에서 쓰던 서브셋 그대로.
+  말 글씨 그림(`shared/glyphs.js`)은 Gaegu와 Zen Kurenaido(SIL OFL 1.1, `shared/fonts/OFL-ZenKurenaido.txt`)의 글자 윤곽에서 뽑았다.
 - 아이콘·썸네일·캐릭터: 직접 그린 SVG(LOA_turk 아이콘 포함). 아이콘 폰트나 외부 그림은 쓰지 않는다.
 - 규칙 설명은 전부 직접 쓴 문장. 원작자가 알려진 게임은 규칙 시트 맨 아래(`rules.note`)에 만든 사람을 적는다(공식 제품처럼 보이지 않게):
   브레이크스루 = 댄 트로이카(Dan Troyka, 2000), 육각잇기 = 피트 하인(1942)·존 내시(1948). 체스·국제 드래프트·백개먼은 전통 게임이라 없음.

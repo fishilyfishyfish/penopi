@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <g fill="none" stroke="#1b1b1b" stroke-width="2" stroke-linecap="round">
+    <path d="M10 14 Q60 13 110 15 M10 41 Q60 40 110 42 M10 68 Q60 69 110 67 M10 95 Q60 94 110 96"/>
+    <path d="M14 10 Q13 60 15 106 M42 10 Q43 60 41 106 M70 10 Q69 60 71 106 M98 10 Q99 60 97 106"/>
+  </g>
+  <g stroke-width="3" stroke-linejoin="round" fill="#fdfdfb" stroke="#1b1b1b">
+    <polygon points="42,50 54,57 57,86 27,86 30,57"/>
+    <polygon points="74,16 86,23 89,52 59,52 62,23" transform="rotate(180 74 34)"/>
+  </g>
+  <path d="M36 62 L48 62 M42 62 L42 78 M34 78 L50 78" fill="none" stroke="#1b1b1b" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M69 31 L81 31 M75 31 L75 46 M67 46 L83 46" fill="none" stroke="#d8452f" stroke-width="3.4" stroke-linecap="round" transform="rotate(180 74 38)"/>
+</svg>

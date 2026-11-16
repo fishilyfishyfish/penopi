@@ -8,7 +8,7 @@
 - 디자인·캐릭터·대사 방식은 LOA 튀르크(fishilyfishyfish/LOA_turk)를 기준으로 한다. **페노피 = 튀르크, 이름만 다름.**
 - 엔진은 각 게임의 원래 레포에서 가져온 것을 **고치지 않는다.** 이 레포에서는 워커로 감싸기만 한다.
   원래 레포(LOA_turk, backgammon-palamedes)는 건드리지 않는다. LOA_turk는 이제 게임이 아니라 디자인·캐릭터·대사의 출처다.
-  예외: 브레이크스루, 국제 드래프트, 체스, 오목, 나인 멘스 모리스, 오와레, 리버시, 점과 상자, 바둑, 장기, 육각잇기는 원래 레포가 없어서 엔진을 이 레포(`<id>/engine.js`)에서
+  예외: 브레이크스루, 국제 드래프트, 체스, 오목, 나인 멘스 모리스, 오와레, 리버시, 점과 상자, 바둑, 장기, 육각잇기, 쇼기는 원래 레포가 없어서 엔진을 이 레포(`<id>/engine.js`)에서
   새로 만들었다(사용자 요청). 이것들은 고쳐도 된다.
 - 사이트는 빌드 도구 없이 바닐라 JS + ES 모듈. WASM만 빌드한다(CI가 함).
 - 대국 화면에는 판, 선후공(또는 색) 고르기, 오른쪽 위 "규칙" 버튼만 둔다. 게임 진행에 꼭 필요한 버튼(체스 승진 고르기, 백개먼
@@ -42,7 +42,7 @@ shared/
   sketch.js            손그림 격자, 연필 궤적, 지우개, 말 뛰기
   glyphs.js            말 이름 글자를 SVG 선으로(tools/glyphs.py가 만듦): 폰트가 안 떠도 똑같이 보인다
   offline.js           서비스 워커 등록
-backgammon/ breakthrough/ draughts/ chess/ gomoku/ morris/ morris6/ morris12/ oware/ reversi/ dots/ go/ janggi/ yukgak/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
+backgammon/ breakthrough/ draughts/ chess/ gomoku/ morris/ morris6/ morris12/ oware/ reversi/ dots/ go/ janggi/ yukgak/ shogi/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
   backgammon/engine/         backgammon-palamedes engine/ 그대로 (06492c2), backgammon/rust-toolchain.toml도
   breakthrough/engine.js     이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "브레이크스루 엔진"
   draughts/engine.js         이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "국제 드래프트 엔진"
@@ -56,6 +56,7 @@ backgammon/ breakthrough/ draughts/ chess/ gomoku/ morris/ morris6/ morris12/ ow
   go/engine.js               이 레포에서 새로 만든 엔진(순수 JS, 몬테카를로 트리 탐색 + RAVE). 아래 "바둑 엔진"
   janggi/engine.js           이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "장기 엔진"
   yukgak/engine.js           이 레포에서 새로 만든 엔진(순수 JS, 몬테카를로 + RAVE). 아래 "육각잇기 엔진"
+  shogi/engine.js            이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "쇼기 엔진"
   */pkg/                     WASM 빌드 산출물(커밋 안 함)
 tools/
   build-wasm.sh        백개먼 엔진 WASM 빌드
@@ -91,12 +92,15 @@ tools/
   janggi-book.mjs      장기 오프닝 북 생성(엔진 깊은 탐색) → janggi/book.js
   janggi-book-check.mjs  장기 북 수를 Fairy-Stockfish로 채점, --write로 손해 수 빼기(측정 전용)
   vs-fsf-janggi.mjs    장기 엔진 vs Fairy-Stockfish 측정. Fairy-Stockfish는 측정에만
+  test-shogi.mjs       쇼기 엔진 테스트(CI): perft(알려진 값), Fairy-Stockfish와 맞춘 국면 359개(shogi-positions.json), 이보·외통 금지 보 놓기·강제 승급·연속 장군·입옥 선언 손 국면, 외통 찾기, 무작위 상대 전승
+  shogi-selfplay.mjs, shogi-tune.mjs  쇼기 평가 텍셀 튜닝(장기와 같은 방식)
+  vs-fsf-shogi.mjs     쇼기 엔진 vs Fairy-Stockfish 측정(측정에만)
   test-yukgak.mjs      육각잇기 엔진 테스트(CI): 세 판 크기 무작위 대국 vs 단순 구현(합법 칸·승자·바꾸기), 이기는 칸·막는 칸, 무작위 상대 전승
   arena-yukgak.mjs     육각잇기 엔진끼리 자동 대국(4스레드, 엔진 옵션)
   test-gomoku.mjs      오목 엔진 테스트(CI): 세 규칙의 승리 판정 vs 단순 계산, 금수 손 국면, 다섯·막기·연속 사, 무작위 상대 전승
   bubble-test.html     수에 대한 대사가 제때 지워지는지(스모크 테스트가 돌림)
   assemble.py          배포할 _site 만들기 + precache.json
-.github/workflows/pages.yml   엔진 테스트 → 대사 글자 검사 → WASM 빌드 → 브레이크스루·드래프트·체스·오목·모리스·오와레·리버시·점과 상자·바둑·장기·육각잇기 테스트 → 스모크 → _site 배포
+.github/workflows/pages.yml   엔진 테스트 → 대사 글자 검사 → WASM 빌드 → 브레이크스루·드래프트·체스·오목·모리스·오와레·리버시·점과 상자·바둑·장기·육각잇기·쇼기 테스트 → 스모크 → _site 배포
 ```
 
 ## 게임 추가하기
@@ -139,8 +143,8 @@ tools/
   백개먼 매치는 매치가 끝날 때까지가 한 판이라, 중간에 나가면 매치 패배. 규칙 시트 전적 줄에 "(두다 말고 나가면 진 걸로 적어)".
 - 끝: 이기면 `engineWin`(게임이 `key`로 더 구체적인 줄을 먼저 시도: 개먼, 포기 등) + 폴짝, 3.5초 뒤 `engineWin2`/`streakBroken`.
   지면 `humanWin`(첫 패배면 `humanWinFirst`) + 가라앉기, 3.5초 뒤 `humanWin2`.
-- 게임 전용 대사 수: 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄, 오목 33줄, 나인 멘스 모리스 27줄(식스·트웰브는 시작 대사 6줄씩 바꾸고, 트웰브는 꽉 찬 판 무승부 2줄), 오와레 51줄, 리버시 31줄, 점과 상자 38줄, 바둑 40줄, 장기 43줄, 육각잇기 21줄(잡담 제외).
-  공통 잡담 14주제 + 게임 잡담(chatBackgammon, chatBreakthrough, chatDraughts, chatChess, chatGomoku, chatMorris, chatMorris6, chatMorris12, chatOware, chatReversi, chatDots, chatGo, chatJanggi, chatYukgak).
+- 게임 전용 대사 수: 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄, 오목 33줄, 나인 멘스 모리스 27줄(식스·트웰브는 시작 대사 6줄씩 바꾸고, 트웰브는 꽉 찬 판 무승부 2줄), 오와레 51줄, 리버시 31줄, 점과 상자 38줄, 바둑 40줄, 장기 43줄, 육각잇기 21줄, 쇼기 45줄(잡담 제외).
+  공통 잡담 14주제 + 게임 잡담(chatBackgammon, chatBreakthrough, chatDraughts, chatChess, chatGomoku, chatMorris, chatMorris6, chatMorris12, chatOware, chatReversi, chatDots, chatGo, chatJanggi, chatYukgak, chatShogi).
   공통 잡담 `chatGames`에는 사이트에 없는 놀이 얘기만 둔다(2026-11-16: 육각잇기 화면에서 체커 판 얘기가 나와 엉뚱했다). 사이트에 있는 게임 얘기(체스·바둑·장기·체커)는 그 게임의 잡담 주제로 옮겼다.
   오와레는 사용자의 어릴 적 추억이 있는 게임이지만 **그 얘기는 대사에 넣지 않는다**(사용자 요청).
   **세계관(사용자 요청, 2026-11-14): 체스는 페노피가 제일 못하는 게임이고 아직 연습 중이다.** 체스 기계 "튀르크"는 안에 사람이 숨어 있어서 잘 뒀고,
@@ -165,6 +169,7 @@ tools/
 | 바둑 | 이 레포에서 새로 만듦(`go/engine.js`, 순수 JS) | 브레이크스루와 같은 방식. 워커가 엔진 하나와 탐색 나무를 들고 있어 판이 이어지면 나무를 다시 쓴다 | 2.5초, 몬테카를로. ponder 없음 |
 | 장기 | 이 레포에서 새로 만듦(`janggi/engine.js`, 순수 JS) | 브레이크스루와 같은 방식, 양쪽 상차림도 같이 보냄 | 2.5초, 반복 심화. 오프닝 북(4수). ponder 없음 |
 | 육각잇기 | 이 레포에서 새로 만듦(`yukgak/engine.js`, 순수 JS) | 브레이크스루와 같은 방식, 판 크기도 같이 보냄 | 2.5초, 몬테카를로. ponder 없음 |
+| 쇼기 | 이 레포에서 새로 만듦(`shogi/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. ponder 없음 |
 | 백개먼 | backgammon-palamedes Rust → WASM(신경망 포함) | module worker, 원래 `engine-worker.js`처럼 함수 이름 + 인자 RPC | 팔라메데스 봇(3수 탐색, WASM 평균 0.4초). 4초 넘으면 워커를 죽이고 2수(`rank_moves_json` 1위)로 |
 
 - 백개먼은 대국 전에 '게임'을 고른다(사용자 요청): 한 판(머니 게임) 또는 3·5·7·9·11점 매치. 매치는 판마다 점수(개먼·백개먼·큐브 포함)를
@@ -443,6 +448,26 @@ tools/
   이기는 칸 찾기·막기, 9줄 무작위 상대 4전 전승.
 - 화면: 끝이 뾰족한 육각형 펜 칸, 흑 변(위·아래)은 굵은 선, 백 변(양옆)은 두 줄 선. 칸을 한 번 누르면 흐린 돌, 또 누르면 둔다(오목과 같음).
   내가 백이고 두 번째 수면 판 아래 "바꾸기"와 페노피의 안내(`swapOffer`, 바꾸기는 그때만 됨). 이기면 이어진 돌을 빨간 펜 선으로 잇는다. 판은 돌리지 않는다.
+
+## 쇼기 엔진 (2026-11-16, 사용자 요청으로 새로 만듦)
+
+- 규칙(일본장기연맹 규칙): 9×9, 선수(먼저, FEN의 w)·후수. 잡은 말은 내 손에(승급 풀어서), 내 차례 한 번을 써서 아무 빈 점에 놓는다. 놓기 금지: 이보(내 승급 안 한 보가 있는 줄),
+  맨 끝줄의 보·향, 끝 두 줄의 계, 보를 놓아 만드는 외통(우치후즈메). 승급(보·향·계·은·각·비): 상대 진영 3줄에 들어가거나 안에서 움직이거나 나올 때 선택,
+  갈 곳이 없어지면 강제. 외통이거나 둘 수가 없으면 패. 같은 국면(손·차례 포함) 4번이면 무승부, 단 매번 장군으로 만든 쪽은 패(연속 장군).
+  입옥 선언(CSA 27점식): 왕이 상대 진영, 장군 아님, 그 안에 왕 뺀 내 말 10개 이상, 점수(비·각·룡·마 5, 나머지 1, 진영 안 말 + 손에 든 말) 선수 28 / 후수 27 이상. 600수는 무승부(상한).
+- 표현: `Int8Array(81)`, 칸 = 행×9+열, 행 0 = 선수 쪽 첫줄(Fairy-Stockfish 표기와 같게 a1이 선수 왼쪽 아래). 말 = 색×16 + 종류(1 보 2 향 3 계 4 은 5 금 6 각 7 비 8 왕, 9–14 승급).
+  수 = from | to<<7 | 승급<<14 | 잡기<<15, 놓기는 from = 81 + 종류, 선언 = 1<<16. 이동·레이 표를 색·말·칸마다 미리 만들고, 공격 검사는 8방향 레이 + 계 표(`attacked`).
+  손은 `hand[색×8+종류]`, 조브리스트 키에 포함. 판·FEN은 Fairy-Stockfish와 같은 글(`P@e5`, `b2g7+`, `[Pbp]`).
+- 탐색: 장기 엔진과 같은 뼈대(PVS, 반복 심화, 탐색 창, 치환표, 널 무브, 역 퓨틸리티·퓨틸리티·LMP, LMR, 체크 연장, IID, 킬러·히스토리). 반복은 마지막 되돌릴 수 없는 수(잡기·놓기·승급·보/향/계 이동)부터만 본다.
+  정지 탐색은 잡기(승급 포함)만, 장군을 받으면 모든 수. 놓는 수의 외통 반칙은 만들고 나서 상대에게 합법수가 있는지로 확인한다(`legalAfter`).
+- 평가(매개변수 배열에 선형, `features()`): 판 위·손 위 말 값, 말·행·열(좌우 접음)별 칸 점수, 각 왕 주변 5×5의 내 말·상대 말(종류·거리별), 왕 옆 빈칸 수, 차례.
+- 검증: Fairy-Stockfish(pyffish)와 무작위 국면 59,737개(놓기·승급·장군 포함)의 합법수가 모두 같다. 단 **Fairy-Stockfish는 보를 놓아 만드는 외통을 합법으로 친다**(60개 국면, 모두 이 경우).
+  우리는 규칙대로 금지한다. perft(1..4) = 30, 900, 25,470, 719,731.
+- 화면: 9×9 펜 격자(화점 넷), 말은 오각 타일(왕·비·각이 크고 보가 작음), 내 말은 위를 보고 상대 말은 아래를 본다(상대 말 글씨는 바로 읽히게 기본 "글씨 바로", 옵션 "거꾸로").
+  글씨는 폰트가 아니라 `shared/glyphs.js`의 그림(옵션 "말 글씨": 한글 보향계은금각비왕옥 / 한자 歩香桂銀金角飛王玉, 승급 토행규전마룡 / と杏圭全馬龍, 승급한 말은 붉은 글씨).
+  손에 든 말은 판 위(상대)·아래(나) 7칸 줄(비 각 금 은 계 향 보, 2개 이상이면 숫자). 말을 누르고 갈 점(빨간 점·잡기는 점선 동그라미), 또는 손의 말을 누르고 빈 점.
+  승급을 고를 수 있으면 판 아래에 "승급 / 그대로 / 취소", 입옥 선언이 되면 판 아래에 "입옥 선언".
+- 아직 안 한 것(2026-11-16 현재): 튜닝 전(재료만 평가) — Fairy-Stockfish 실력 레벨 10에 0.1초 상대로도 졌다. 오프닝 북 없음.
 
 ## 디자인 결정
 

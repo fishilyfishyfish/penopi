@@ -15,7 +15,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { backgammon: 9000, oware: 9000, reversi: 9000, dots: 12000, go: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000, janggi: 9000, yukgak: 9000, morris6: 9000, morris12: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { backgammon: 9000, oware: 9000, reversi: 9000, dots: 12000, go: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000, janggi: 9000, yukgak: 9000, morris6: 9000, morris12: 9000, shogi: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -123,6 +123,11 @@ async function boardGame(id, sideIdx) {
       const m = d.legal[Math.floor(Math.random() * d.legal.length)];
       await sq(d.cells[m & 127]).click();
       await sq(d.cells[(m >> 7) & 127]).click();
+    } else if (id === 'shogi') { // moves: from | to << 7 | promotion << 14 (a drop: from = 81 + the piece type); d.cells maps a point to its button, d.slots a hand piece to its button
+      const m = d.legal[Math.floor(Math.random() * d.legal.length)], from = m & 127;
+      await sq(from > 81 ? d.slots[from - 81] : d.cells[from]).click();
+      await sq(d.cells[(m >> 7) & 127]).click();
+      if ((await dbg(p)).promo) await p.click(`#tray [data-promo="${(m >> 14) & 1}"]`);
     } else if (id === 'draughts') { // moves: {from, to, path}; tap the piece, the squares on the way, the end
       const m = d.legal[Math.floor(Math.random() * d.legal.length)];
       await sq(d.cells[m.from]).click();
@@ -200,6 +205,8 @@ if (!ONLY || ONLY.includes('dots')) await boardGame('dots', 1);
 if (!ONLY || ONLY.includes('go')) await boardGame('go', 1);
 if (!ONLY || ONLY.includes('janggi')) await boardGame('janggi', 1);
 if (!ONLY || ONLY.includes('janggi')) await boardGame('janggi', 0);
+if (!ONLY || ONLY.includes('shogi')) await boardGame('shogi', 1);
+if (!ONLY || ONLY.includes('shogi')) await boardGame('shogi', 0);
 if (!ONLY || ONLY.includes('yukgak')) await boardGame('yukgak', 1);
 if (!ONLY || ONLY.includes('yukgak')) await boardGame('yukgak', 0);
 if (!ONLY || ONLY.includes('backgammon')) await backgammon(1);

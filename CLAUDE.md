@@ -139,6 +139,7 @@ tools/
   지면 `humanWin`(첫 패배면 `humanWinFirst`) + 가라앉기, 3.5초 뒤 `humanWin2`.
 - 게임 전용 대사 수: 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄, 오목 33줄, 나인 멘스 모리스 27줄(식스·트웰브는 시작 대사 6줄씩 바꾸고, 트웰브는 꽉 찬 판 무승부 2줄), 오와레 51줄, 리버시 31줄, 점과 상자 38줄, 바둑 40줄, 장기 43줄, 육각잇기 21줄(잡담 제외).
   공통 잡담 14주제 + 게임 잡담(chatBackgammon, chatBreakthrough, chatDraughts, chatChess, chatGomoku, chatMorris, chatMorris6, chatMorris12, chatOware, chatReversi, chatDots, chatGo, chatJanggi, chatYukgak).
+  공통 잡담 `chatGames`에는 사이트에 없는 놀이 얘기만 둔다(2026-11-16: 육각잇기 화면에서 체커 판 얘기가 나와 엉뚱했다). 사이트에 있는 게임 얘기(체스·바둑·장기·체커)는 그 게임의 잡담 주제로 옮겼다.
   오와레는 사용자의 어릴 적 추억이 있는 게임이지만 **그 얘기는 대사에 넣지 않는다**(사용자 요청).
   **세계관(사용자 요청, 2026-11-14): 체스는 페노피가 제일 못하는 게임이고 아직 연습 중이다.** 체스 기계 "튀르크"는 안에 사람이 숨어 있어서 잘 뒀고,
   페노피는 진짜 혼자라 체스가 어렵다(잡담). 그래서 "1770년부터 뒀어" 같은 체스 자랑은 뺐고, 연습 중인 페노피에게 지면 더 놀린다(`engineWin`/`engineWin2`/`engineWinMate`).

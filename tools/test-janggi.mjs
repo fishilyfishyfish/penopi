@@ -203,5 +203,19 @@ const engMoves = (E, list) => list.map((m) => (m === E.PASS ? 'pass' : E.uci(m))
   check(wins === 4, `engine won ${wins} of 4 against random`);
   console.log(`search: mate in one, two 차 mate; ${wins}/4 against random`);
 }
+// ---------- 4. the opening book: every move legal in its position ----------
+{
+  const { BOOK } = await import(path.join(root, 'janggi', 'book.js'));
+  const E = JanggiEngine({ ttBits: 4 });
+  let n = 0, bad = 0;
+  for (const [k, ms] of Object.entries(BOOK)) {
+    E.setFen(k + ' - - 0 1');
+    const legal = E.legalMoves().map((m) => E.uci(m));
+    for (const u of ms) { n++; if (!legal.includes(u)) { bad++; check(false, `book: ${u} illegal in ${k}`); } }
+  }
+  // the 16 starting positions are all in the book
+  for (let a = 0; a < 4; a++) for (let b2 = 0; b2 < 4; b2++) { E.setup(a, b2); check(!!BOOK[E.fen().split(' ').slice(0, 2).join(' ')], `book: start ${a}/${b2} missing`); }
+  console.log(`book: ${Object.keys(BOOK).length} positions, ${n} moves, ${bad} illegal`);
+}
 if (failures) { console.log(`${failures} failed`); process.exit(1); }
 console.log('ok');

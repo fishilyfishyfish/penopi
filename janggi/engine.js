@@ -436,7 +436,7 @@ function JanggiEngine(opts) {
   const W = Object.assign({ rfp: 1, fut: 1, lmp: 1, nul: 0, iid: 1, asp: 1, cm: 1, bad: 1 }, opts.weights || {});
   const RFP_MARGIN = 90, FUT_MARGIN = [0, 120, 220, 320], LMP = [0, 6, 10, 16, 24];
   const VICTIM = [0, 100, 170, 170, 300, 380, 650, 5000];
-  let nodes = 0, deadline = 0, stopped = false, maxNodes = 0, rootBest = 0;
+  let nodes = 0, deadline = 0, stopped = false, maxNodes = 0, rootBest = 0, excluded = null;
   function timeUp() {
     if ((nodes & 2047) === 0 && ((deadline && Date.now() >= deadline) || (maxNodes && nodes >= maxNodes))) stopped = true;
     return stopped;
@@ -555,6 +555,7 @@ function JanggiEngine(opts) {
     let best = -INF, bestMove = 0, legal = 0, quiets = 0;
     for (let i = 0; i < n; i++) {
       const m = pick(n, p, i);
+      if (p === 0 && excluded && excluded.includes(m)) continue; // think({exclude}): the next best move
       const quiet = !isCap(m);
       make(m);
       if (m !== PASS && (inCheck(side ^ 8) || (fc && facing()))) { unmake(); continue; }
@@ -614,7 +615,8 @@ function JanggiEngine(opts) {
     KIL.fill(0);
     for (let i = 0; i < HIST.length; i++) HIST[i] >>= 2;
     if (cfg.clearTT) ttClear();
-    const legal = legalMoves();
+    excluded = cfg.exclude && cfg.exclude.length ? cfg.exclude : null;
+    const legal = legalMoves().filter((m) => !excluded || !excluded.includes(m));
     const info = { move: 0, score: 0, depth: 0, nodes: 0, ms: 0 };
     if (!legal.length) { info.score = -MATE; return info; }
     if (legal.length === 1) { info.move = legal[0]; info.score = evaluate(); info.ms = Date.now() - t0; return info; }

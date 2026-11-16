@@ -4,6 +4,7 @@
 // Input: tap a piece, then where it goes. "한수 쉼" (pass) under the board when not in check.
 // Before the game I pick my 상차림 (option); Penopi picks its own at random.
 import { LINES } from './lines.js';
+import { BOOK } from './book.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
@@ -21,7 +22,7 @@ const fmt = (x) => String(x).replace(/\.5$/, '.5');
 
 let api, boardEl, ptEls = [];
 let human = CHO, myArr = 2, penArr = 2, moves = [], state = null, sel = -1, playing = false, g = 0;
-let engine = null, localE = null;
+let engine = null, localE = null, inBook = true, firstSearch = false;
 
 const arrs = () => (human === CHO ? [myArr, penArr] : [penArr, myArr]);
 function replay() {
@@ -32,6 +33,7 @@ function replay() {
   return {
     b: Array.from(R.board), side: R.side, result, legal: result ? [] : R.legalMoves(), check: R.inCheck(),
     king: R.kings[R.side >> 3], last: moves.length ? moves[moves.length - 1] : 0, facing: R.facing(),
+    key: R.fen().split(' ').slice(0, 2).join(' '),
     pts: [R.points(CHO), R.points(HAN)], winner: result.startsWith('count') ? R.countWinner() : result ? R.side ^ 8 : -1,
   };
 }
@@ -57,6 +59,15 @@ async function engineMove() {
   api.engineTurn({ color: colorOf(human ^ 8) });
   render();
   const t0 = Date.now();
+  // the opening book (janggi/book.js, the engine's own deep searches): while the game follows it
+  const bk = inBook && BOOK[state.key] ? BOOK[state.key].map((u) => state.legal.find((x) => R.uci(x) === u)).filter((x) => x !== undefined) : [];
+  if (bk.length) {
+    await new Promise((r) => setTimeout(r, 600 + Math.random() * 600));
+    if (my !== g) return;
+    commit(bk[Math.floor(Math.random() * bk.length)], { score: 0, nodes: 0, book: true });
+    return;
+  }
+  inBook = false;
   const info = await think(THINK_MS);
   if (my !== g || !info) return;
   if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500 - (Date.now() - t0)));
@@ -130,7 +141,10 @@ function engineTalk(m, info, taken, kind, wasFacing) {
   if (state.check) facts.push(['engineCheck', null, 0.8]);
   if (kind === 'win' && taken !== CHA) facts.push(['engineCap', { pc: NAMES[taken] }, 0.6]);
   const counted = Math.abs(sc) >= COUNT_WIN - 1000 && Math.abs(sc) < MATE_BOUND; // the game will end by counting
+  const fresh = info && info.book ? true : firstSearch; // the book has no evaluation to compare against
+  firstSearch = !!(info && info.book);
   api.engineMoved({
+    verdict: fresh ? null : undefined,
     p: counted ? (sc > 0 ? 0.97 : 0.03) : 1 / (1 + Math.exp(-sc / 300)),
     mate: sc >= MATE_BOUND ? Math.ceil((MATE - sc) / 2) : 0,
     doomed: sc <= -MATE_BOUND,
@@ -249,7 +263,7 @@ function scribble(s, p) {
   setTimeout(() => el.remove(), 900);
 }
 const clearDoodles = () => { for (const e of boardEl.querySelectorAll('.trail, .ghost')) e.remove(); };
-function stop() { g++; if (engine) engine.restart(); }
+function stop() { g++; inBook = true; firstSearch = false; if (engine) engine.restart(); }
 
 export default {
   id: 'janggi',

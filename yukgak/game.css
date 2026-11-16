@@ -1,0 +1,19 @@
+/* 육각잇기: pen hexagons on paper; stones like go's. 흑's edges (top, bottom) a thick ink line, 백's (sides) a double line. */
+.game-yukgak .board { position: relative; }
+.hexgrid { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.hexgrid .cells polygon { fill: none; stroke: #1b1b1b; stroke-width: 1.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.hexgrid .eb { fill: none; stroke: #1b1b1b; stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.hexgrid .ew { fill: none; stroke: #1b1b1b; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.hexgrid .chain { fill: none; stroke: var(--pen); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: .85; }
+.hx { position: absolute; border: 0; padding: 0; margin: 0; background: transparent; cursor: pointer; display: grid; place-items: center; z-index: 1; touch-action: manipulation;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.hx:focus-visible { outline: 3px dashed var(--pen); outline-offset: -6px; }
+.stone { width: 72%; height: 62%; border-radius: 48% 52% 46% 54% / 53% 47% 55% 45%; pointer-events: none; position: relative; }
+.stone.b { background: var(--ink); box-shadow: inset -2px -3px 0 -1px rgba(255, 255, 255, .14); }
+.stone.w { background: var(--sheet); border: 2.2px solid var(--ink); }
+.stone.ghost { opacity: .35; }
+.stone.last::after { content: ""; position: absolute; left: 50%; top: 50%; width: 26%; height: 30%; margin: -15% 0 0 -13%; border-radius: 50%; background: var(--pen); }
+@media (prefers-reduced-motion: no-preference) {
+  .stone.drop { animation: drop .25s ease-out; }
+}
+@keyframes drop { from { transform: scale(1.35); opacity: .3; } }

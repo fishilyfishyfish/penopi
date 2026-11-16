@@ -97,6 +97,8 @@ jobs:
         run: node tools/test-go.mjs
       - name: Test Janggi engine
         run: node tools/test-janggi.mjs
+      - name: Test 육각잇기 engine
+        run: node tools/test-yukgak.mjs
 
       - uses: actions/cache@v4
         with:

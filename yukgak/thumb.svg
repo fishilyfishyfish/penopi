@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <g fill="none" stroke="#1b1b1b" stroke-width="2" stroke-linejoin="round">
+    <polygon points="30,22 43,29.5 43,44.5 30,52 17,44.5 17,29.5"/>
+    <polygon points="56,22 69,29.5 69,44.5 56,52 43,44.5 43,29.5"/>
+    <polygon points="82,22 95,29.5 95,44.5 82,52 69,44.5 69,29.5"/>
+    <polygon points="43,44.5 56,52 56,67 43,74.5 30,67 30,52"/>
+    <polygon points="69,44.5 82,52 82,67 69,74.5 56,67 56,52"/>
+    <polygon points="95,44.5 108,52 108,67 95,74.5 82,67 82,52"/>
+    <polygon points="56,67 69,74.5 69,89.5 56,97 43,89.5 43,74.5"/>
+    <polygon points="82,67 95,74.5 95,89.5 82,97 69,89.5 69,74.5"/>
+  </g>
+  <path d="M17 20 L30 13 L56 13 L95 20" fill="none" stroke="#1b1b1b" stroke-width="5" stroke-linecap="round"/>
+  <ellipse cx="56" cy="37" rx="9" ry="8" fill="#1b1b1b"/>
+  <ellipse cx="69" cy="59.5" rx="9" ry="8" fill="#1b1b1b"/>
+  <ellipse cx="82" cy="37" rx="9" ry="8" fill="#fdfdfb" stroke="#1b1b1b" stroke-width="2.4"/>
+  <ellipse cx="56" cy="82" rx="9" ry="8" fill="#fdfdfb" stroke="#1b1b1b" stroke-width="2.4"/>
+  <path d="M56 37 L69 59.5" stroke="#d8452f" stroke-width="3" stroke-linecap="round"/>
+</svg>

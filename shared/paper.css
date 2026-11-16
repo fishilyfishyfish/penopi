@@ -1,7 +1,10 @@
 /* Penopi: a sketchbook page. Pen lines on paper, a doodle peeking over the board.
    Shared by the lobby and every game page. Taken from LOA 튀르크 (fishilyfishyfish/LOA_turk) as it was.
-   Gaegu (SIL OFL, fonts/OFL.txt), cut down to Latin, punctuation and the 2,350 common Hangul syllables:
-   a character outside that set falls back to the system font (tools/check-lines.py keeps the lines inside it). */
+   Penopi font (drawn by the site owner, fonts/Penopi.woff2), cut down to Latin, punctuation and the 2,350 common Hangul syllables;
+   Gaegu (SIL OFL, fonts/OFL.txt) is the fallback. A character outside that set falls back to the system font
+   (tools/check-lines.py keeps the lines inside it). One weight only, so bold maps to the same file (no faux bold). */
+@font-face { font-family: "Penopi Local"; font-weight: 400; font-display: swap; size-adjust: 125%; src: url("fonts/Penopi.woff2") format("woff2"); }
+@font-face { font-family: "Penopi Local"; font-weight: 700; font-display: swap; size-adjust: 125%; src: url("fonts/Penopi.woff2") format("woff2"); }
 @font-face { font-family: "Gaegu Local"; font-weight: 400; font-display: swap; src: url("fonts/Gaegu-Regular.woff2") format("woff2"); }
 @font-face { font-family: "Gaegu Local"; font-weight: 700; font-display: swap; src: url("fonts/Gaegu-Bold.woff2") format("woff2"); }
 :root {
@@ -13,7 +16,7 @@
   --marker: rgba(255, 214, 0, .45);     /* highlighter: the last move */
   --hatch: rgba(27, 27, 27, .13);       /* pencil hatching on dark squares */
   --hand: 255px 15px 225px 15px / 15px 225px 15px 255px; /* a wobbly hand-drawn box */
-  --font: "Gaegu Local", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font: "Penopi Local", "Gaegu Local", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   color-scheme: light;
 }
 * { box-sizing: border-box; }

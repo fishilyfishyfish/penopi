@@ -500,7 +500,10 @@ python3 tools/assemble.py _site                # 배포본 미리 보기
 
 ## 라이선스
 
-- 폰트: Gaegu, SIL Open Font License 1.1 (`shared/fonts/OFL.txt`). LOA_turk에서 쓰던 서브셋 그대로.
+- 본문 폰트(2026-11-16~): **페노피 폰트**(사용자가 직접 만든 TTF, 한글 11,172자)를 라틴·기호·한글 2,350자로 잘라 `shared/fonts/Penopi.woff2`로 쓴다.
+  원본은 글자 폭이 모두 1000이라 자간이 넓어서 한글 2,344자의 좌우 여백을 글자 폭+130(최소 560)으로 줄이고(획은 그대로), `paper.css`에서 `size-adjust: 125%`. 굵기가 하나라 700도 같은 파일(가짜 굵게 없음).
+  `tools/check-lines.py`는 이 폰트 기준. 폰트를 다시 만들면 같은 순서로 잘라 넣을 것. Gaegu는 대체 폰트로만 남음.
+- 대체 폰트: Gaegu, SIL Open Font License 1.1 (`shared/fonts/OFL.txt`). LOA_turk에서 쓰던 서브셋 그대로.
   말 글씨 그림(`shared/glyphs.js`)은 Gaegu와 Zen Kurenaido(SIL OFL 1.1, `shared/fonts/OFL-ZenKurenaido.txt`)의 글자 윤곽에서 뽑았다.
 - 아이콘·썸네일·캐릭터: 직접 그린 SVG(LOA_turk 아이콘 포함). 아이콘 폰트나 외부 그림은 쓰지 않는다.
 - 규칙 설명은 전부 직접 쓴 문장. 원작자가 알려진 게임은 규칙 시트 맨 아래(`rules.note`)에 만든 사람을 적는다(공식 제품처럼 보이지 않게):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Checks that every Hangul syllable the site can show is in the cut-down Gaegu font.
+"""Checks that every Hangul syllable the site can show is in the cut-down Penopi font.
 
 The font (shared/fonts) keeps only the 2,350 common Hangul syllables; anything else falls back to a
 system font and breaks the hand-written look. This scans the page sources (lines, rules, buttons...)
@@ -13,10 +13,7 @@ import sys
 from fontTools.ttLib import TTFont
 
 root = pathlib.Path(__file__).resolve().parent.parent
-cmap = set()
-for f in ("Gaegu-Regular.woff2", "Gaegu-Bold.woff2"):
-    font = TTFont(root / "shared" / "fonts" / f)
-    cmap |= set(font.getBestCmap().keys()) if not cmap else cmap & set(font.getBestCmap().keys())
+cmap = set(TTFont(root / "shared" / "fonts" / "Penopi.woff2").getBestCmap().keys())
 
 skip = {"engine", "pkg", "node_modules", ".git", "tools", "target"}
 sources = [p for p in root.rglob("*") if p.suffix in (".js", ".html", ".webmanifest") and not (skip & set(p.relative_to(root).parts))]

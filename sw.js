@@ -5,7 +5,7 @@
 // worker fetches them all at once and even a game never opened works offline.
 'use strict';
 const CACHE = 'penopi';
-const SHELL = ['./', 'manifest.webmanifest', 'shared/paper.css', 'shared/fonts/Gaegu-Regular.woff2', 'shared/fonts/Gaegu-Bold.woff2'];
+const SHELL = ['./', 'manifest.webmanifest', 'shared/paper.css', 'shared/fonts/Penopi.woff2'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {

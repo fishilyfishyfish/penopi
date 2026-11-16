@@ -224,12 +224,13 @@ function GoEngine(opts) {
     const POS = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1], [2, 2]];
     const ok = (ch, st) => ch === '?' || (ch === '.' && st === 0) || (ch === 'X' && st === 1) || (ch === 'O' && st === 2) || (ch === ' ' && st === 3)
       || (ch === 'x' && (st === 0 || st === 2)) || (ch === 'o' && (st === 0 || st === 1));
-    for (let code = 0; code < 65536; code++) {
-      for (const g of all) {
-        let m = true;
-        for (let i = 0; i < 8 && m; i++) m = ok(g[POS[i][0]][POS[i][1]], (code >> (2 * i)) & 3);
-        if (m) { PAT[code] = 1; break; }
-      }
+    // every code a pattern matches, written straight into the table (testing all 65,536 codes against every
+    // pattern took a quarter of a second at start-up, a second on a phone)
+    const states = (ch) => [0, 1, 2, 3].filter((st) => ok(ch, st));
+    for (const g of all) {
+      const allowed = POS.map(([r, c]) => states(g[r][c]));
+      const fill = (i, code) => { if (i === 8) { PAT[code] = 1; return; } for (const st of allowed[i]) fill(i + 1, code | (st << (2 * i))); };
+      fill(0, 0);
     }
   }
   function patAt(B, p) { let code = 0; for (let i = 0; i < 8; i++) code |= B.c[p + N8[i]] << (2 * i); return PAT[code]; }

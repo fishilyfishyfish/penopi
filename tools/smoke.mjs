@@ -2,6 +2,8 @@
 // and play by tapping the board (random legal moves) while Penopi answers, until the game ends or a move cap.
 // Fails on any page error, an engine answer slower than the cap, or a game that stops moving.
 //   node tools/smoke.mjs [moves per game = 40] [screenshot folder]
+// PHONE=4 node tools/smoke.mjs 8: the same with the page's CPU slowed 4 times, reporting for each game how long
+// the page took to be ready and the longest stretch the page itself was busy (a frozen screen) while playing.
 // Needs the WASM built (tools/build-wasm.sh) and playwright (npm i playwright, or the one on this machine).
 import { createRequire } from 'module';
 import http from 'http';
@@ -31,8 +33,18 @@ const browser = await chromium.launch();
 let failed = false;
 const fail = (msg) => { failed = true; console.log('FAIL', msg); };
 
+const PHONE = Number(process.env.PHONE || 0);
 async function page(url) {
   const p = await browser.newPage({ viewport: { width: 400, height: 860 } });
+  if (PHONE) {
+    const cdp = await p.context().newCDPSession(p);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: PHONE });
+    // (only the page is slowed: workers think for a fixed time anyway, so a slow phone costs them depth, not time)
+    await p.addInitScript(() => {
+      globalThis.__long = { max: 0, total: 0, n: 0 };
+      new PerformanceObserver((l) => { for (const e of l.getEntries()) { const L = globalThis.__long; L.max = Math.max(L.max, e.duration); L.total += e.duration; L.n++; } }).observe({ entryTypes: ['longtask'] });
+    });
+  }
   const errors = [];
   p.on('pageerror', (e) => errors.push(String(e.stack || e)));
   p.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text()); });
@@ -135,6 +147,10 @@ async function boardGame(id, sideIdx) {
   }
   if (slowest > ENGINE_CAP[id]) fail(`${id}: Penopi took ${slowest} ms`);
   const d = await dbg(p);
+  if (PHONE) {
+    const L = await p.evaluate(() => ({ ...globalThis.__long, ready: Math.round(performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd) }));
+    console.log(`  phone ×${PHONE} ${id}: ready ${L.ready} ms, page busy at most ${Math.round(L.max)} ms (${L.n} long tasks, ${Math.round(L.total)} ms in all)`);
+  }
   console.log(`${id}: ${mine} moves of mine, ${d.plies} plies, over=${d.over}, slowest reply ${slowest} ms, says "${await p.textContent('.bubble')}"`);
   if (SHOTS) await p.screenshot({ path: path.join(SHOTS, `${id}.png`) });
   if (errors.length) fail(`${id}: ` + errors.join(' | '));
@@ -170,22 +186,23 @@ async function backgammon(sideIdx) {
   await p.close();
 }
 
-await boardGame('breakthrough', 1);
-await boardGame('draughts', 1);
-await boardGame('chess', 1);
-await boardGame('gomoku', 1);
-await boardGame('morris', 1);
-await boardGame('morris6', 1);
-await boardGame('morris12', 0);
-await boardGame('oware', 1);
-await boardGame('reversi', 1);
-await boardGame('dots', 1);
-await boardGame('go', 1);
-await boardGame('janggi', 1);
-await boardGame('janggi', 0);
-await boardGame('yukgak', 1);
-await boardGame('yukgak', 0);
-await backgammon(1);
+const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : null; // ONLY=chess,go: just those games
+if (!ONLY || ONLY.includes('breakthrough')) await boardGame('breakthrough', 1);
+if (!ONLY || ONLY.includes('draughts')) await boardGame('draughts', 1);
+if (!ONLY || ONLY.includes('chess')) await boardGame('chess', 1);
+if (!ONLY || ONLY.includes('gomoku')) await boardGame('gomoku', 1);
+if (!ONLY || ONLY.includes('morris')) await boardGame('morris', 1);
+if (!ONLY || ONLY.includes('morris6')) await boardGame('morris6', 1);
+if (!ONLY || ONLY.includes('morris12')) await boardGame('morris12', 0);
+if (!ONLY || ONLY.includes('oware')) await boardGame('oware', 1);
+if (!ONLY || ONLY.includes('reversi')) await boardGame('reversi', 1);
+if (!ONLY || ONLY.includes('dots')) await boardGame('dots', 1);
+if (!ONLY || ONLY.includes('go')) await boardGame('go', 1);
+if (!ONLY || ONLY.includes('janggi')) await boardGame('janggi', 1);
+if (!ONLY || ONLY.includes('janggi')) await boardGame('janggi', 0);
+if (!ONLY || ONLY.includes('yukgak')) await boardGame('yukgak', 1);
+if (!ONLY || ONLY.includes('yukgak')) await boardGame('yukgak', 0);
+if (!ONLY || ONLY.includes('backgammon')) await backgammon(1);
 await browser.close();
 server.close();
 if (failed) process.exit(1);

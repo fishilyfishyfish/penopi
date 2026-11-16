@@ -46,29 +46,35 @@ async function think(time) {
   }
 }
 // the book: position (FEN without the move counters) → book moves, built once from the SAN lines
-let book = null;
+let book = null, bookReady = null;
 const posKey = (fen) => fen.split(' ').slice(0, 4).join(' ');
-function buildBook() {
-  book = new Map();
+// built a few lines at a time from the moment the page opens, so the screen never freezes (it did, for seconds, on a phone)
+async function buildBook() {
+  const made = new Map();
   const B = globalThis.ChessEngine({ ttBits: 4 });
+  let n = 0;
   for (const line of BOOK) {
+    if (++n % 6 === 0) await new Promise((r) => setTimeout(r, 0));
     const { only, sans } = parseLine(line);
     B.setStart();
     for (const tok of sans) {
-      const m = B.legalMoves().find((x) => B.san(x).replace(/[+#]/g, '') === tok.replace(/[+#]/g, ''));
+      // candidates by destination and piece first: writing out every legal move's notation froze a phone for seconds
+      const want = tok.replace(/[+#]/g, ''), castle = want[0] === 'O', dest = castle ? '' : want.replace(/=.$/, '').slice(-2), pc = 'NBRQK'.indexOf(want[0]) + 2 || 1;
+      const cands = B.legalMoves().filter((x) => (castle ? (mFlags(x) & R.FLAG_CASTLE) : R.sqName(mTo(x)) === dest && (B.board[mFrom(x)] & 7) === pc));
+      const m = cands.find((x) => B.san(x).replace(/[+#]/g, '') === want);
       if (m === undefined) break;
       if (!only || only === (B.side === 0 ? 'w' : 'b')) { // a "w:"/"b:" line: the other side's moves are only expected
         const k = posKey(B.fen());
-        if (!book.has(k)) book.set(k, new Set());
-        book.get(k).add(m);
+        if (!made.has(k)) made.set(k, new Set());
+        made.get(k).add(m);
       }
       B.play(m);
     }
   }
+  book = made;
 }
 function bookMove() {
-  if (!inBook) return 0;
-  if (!book) buildBook();
+  if (!inBook || !book) return 0;
   const set = book.get(posKey(R.fen()));
   const options = set ? [...set].filter((m) => state.legal.includes(m)) : [];
   if (!options.length) { inBook = false; return 0; }
@@ -88,6 +94,7 @@ async function engineMove() {
   api.engineTurn({ color: colorOf(human ^ 8) });
   render();
   const t0 = Date.now();
+  if (inBook) { if (!bookReady) bookReady = buildBook(); await bookReady; if (my !== g) return; }
   R.setStart(); for (const x of moves) R.play(x);
   const bm = bookMove();
   if (bm) {
@@ -342,6 +349,7 @@ export default {
     build();
     state = replay();
     render();
+    if (!bookReady) bookReady = buildBook();
   },
   start(side) {
     stop();

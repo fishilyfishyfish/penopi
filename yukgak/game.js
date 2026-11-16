@@ -83,7 +83,10 @@ function next() {
   tray();
   if (!playing) return;
   if (state.winner) { finish(); return; }
-  if (state.stm === human) api.yourTurn({ color: colorOf(human), label: sideName(human), text: myStatus() });
+  if (state.stm === human) {
+    api.yourTurn({ color: colorOf(human), label: sideName(human), text: myStatus() });
+    if (state.canSwap) api.say('swapOffer'); // the swap button is only there now: say so
+  }
   else engineMove();
   render();
 }
@@ -118,7 +121,7 @@ addEventListener('keydown', (e) => {
 function tray() {
   const t = api.tray, mine = playing && state && !state.winner && state.stm === human && state.canSwap;
   if (!mine) { t.hidden = true; t.innerHTML = ''; t.dataset.h = ''; return; }
-  const html = '<button type="button" class="btn small" data-act="swap">바꾸기</button>';
+  const html = '<button type="button" class="btn small" data-act="swap">바꾸기 · 첫 돌 가져오기</button>';
   if (t.dataset.h !== html) { t.innerHTML = html; t.dataset.h = html; }
   t.hidden = false;
 }

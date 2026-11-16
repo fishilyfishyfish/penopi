@@ -41,13 +41,14 @@ shared/
   record.js            게임별 전적(localStorage `penopi.<id>.record`), 마지막 방문
   sketch.js            손그림 격자, 연필 궤적, 지우개, 말 뛰기
   offline.js           서비스 워커 등록
-backgammon/ breakthrough/ draughts/ chess/ gomoku/ morris/ oware/ reversi/ dots/ go/ janggi/ yukgak/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
+backgammon/ breakthrough/ draughts/ chess/ gomoku/ morris/ morris6/ morris12/ oware/ reversi/ dots/ go/ janggi/ yukgak/   게임마다: index.html(얇음), game.js, worker.js, lines.js, game.css, thumb.svg
   backgammon/engine/         backgammon-palamedes engine/ 그대로 (06492c2), backgammon/rust-toolchain.toml도
   breakthrough/engine.js     이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "브레이크스루 엔진"
   draughts/engine.js         이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "국제 드래프트 엔진"
   chess/engine.js            이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "체스 엔진"
   gomoku/engine.js           이 레포에서 새로 만든 엔진(순수 JS, 알파베타 + 연속 사 탐색). 아래 "오목 엔진"
-  morris/engine.js           이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "나인 멘스 모리스 엔진"
+  morris/engine.js           이 레포에서 새로 만든 엔진(순수 JS, 알파베타, 나인·식스·트웰브 판). 아래 "나인 멘스 모리스 엔진"
+  morris6/ morris12/         index.html·thumb.svg만. 엔진·화면·대사·CSS·워커는 morris/ 것을 판 종류(`makeMorris('six'|'twelve')`)로 같이 씀
   oware/engine.js            이 레포에서 새로 만든 엔진(순수 JS, 알파베타). 아래 "오와레 엔진"
   reversi/engine.js          이 레포에서 새로 만든 엔진(순수 JS, 알파베타 + 끝판 완전 읽기). 아래 "리버시 엔진"
   dots/engine.js             이 레포에서 새로 만든 엔진(순수 JS, 알파베타 + 잡기·더블 딜 축약). 아래 "점과 상자 엔진"
@@ -72,7 +73,7 @@ tools/
   chess-book-check.mjs     체스 북 수를 Stockfish로 채점(측정 전용)
   wac.mjs              체스 전술 문제(EPD) 풀기. WAC 파일은 레포에 없음(Arasan 엔진 레포 tests/wacnew.epd)
   vs-stockfish.mjs     체스 엔진 vs Stockfish(UCI_Elo 제한) 측정. Stockfish는 측정에만
-  test-morris.mjs      나인 멘스 모리스 엔진 테스트(CI): 무작위 대국 모든 국면 vs 단순 구현, 밀·날기·패배 규칙 손 국면, 무작위 상대 전승
+  test-morris.mjs      모리스 엔진 테스트(CI): 나인·식스·트웰브 무작위 대국 모든 국면 vs 단순 구현, 밀·날기·패배 규칙 손 국면, 트웰브 꽉 찬 판 무승부, 무작위 상대 전승
   test-oware.mjs       오와레 엔진 테스트(CI): 무작위 대국 모든 국면 vs 단순 구현, 잡기·몽땅 잡기·넘겨주기 손 국면, 작은 끝판 vs 완전 탐색, 무작위·탐욕 상대 전승
   arena-oware.mjs      오와레 엔진끼리 자동 대국
   test-reversi.mjs     리버시 엔진 테스트(CI): 공개된 perft 값, 무작위 대국 모든 국면 vs 단순 구현, 끝판 정확한 결과 vs 완전 탐색, 무작위·탐욕 상대 전승
@@ -136,8 +137,8 @@ tools/
   백개먼 매치는 매치가 끝날 때까지가 한 판이라, 중간에 나가면 매치 패배. 규칙 시트 전적 줄에 "(두다 말고 나가면 진 걸로 적어)".
 - 끝: 이기면 `engineWin`(게임이 `key`로 더 구체적인 줄을 먼저 시도: 개먼, 포기 등) + 폴짝, 3.5초 뒤 `engineWin2`/`streakBroken`.
   지면 `humanWin`(첫 패배면 `humanWinFirst`) + 가라앉기, 3.5초 뒤 `humanWin2`.
-- 게임 전용 대사 수: 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄, 오목 33줄, 나인 멘스 모리스 27줄, 오와레 51줄, 리버시 31줄, 점과 상자 38줄, 바둑 40줄, 장기 43줄, 육각잇기 21줄(잡담 제외).
-  공통 잡담 14주제 + 게임 잡담(chatBackgammon, chatBreakthrough, chatDraughts, chatChess, chatGomoku, chatMorris, chatOware, chatReversi, chatDots, chatGo, chatJanggi, chatYukgak).
+- 게임 전용 대사 수: 백개먼 65줄, 브레이크스루 33줄, 국제 드래프트 38줄, 체스 47줄, 오목 33줄, 나인 멘스 모리스 27줄(식스·트웰브는 시작 대사 6줄씩 바꾸고, 트웰브는 꽉 찬 판 무승부 2줄), 오와레 51줄, 리버시 31줄, 점과 상자 38줄, 바둑 40줄, 장기 43줄, 육각잇기 21줄(잡담 제외).
+  공통 잡담 14주제 + 게임 잡담(chatBackgammon, chatBreakthrough, chatDraughts, chatChess, chatGomoku, chatMorris, chatMorris6, chatMorris12, chatOware, chatReversi, chatDots, chatGo, chatJanggi, chatYukgak).
   오와레는 사용자의 어릴 적 추억이 있는 게임이지만 **그 얘기는 대사에 넣지 않는다**(사용자 요청).
   **세계관(사용자 요청, 2026-11-14): 체스는 페노피가 제일 못하는 게임이고 아직 연습 중이다.** 체스 기계 "튀르크"는 안에 사람이 숨어 있어서 잘 뒀고,
   페노피는 진짜 혼자라 체스가 어렵다(잡담). 그래서 "1770년부터 뒀어" 같은 체스 자랑은 뺐고, 연습 중인 페노피에게 지면 더 놀린다(`engineWin`/`engineWin2`/`engineWinMate`).
@@ -154,7 +155,7 @@ tools/
 | 국제 드래프트 | 이 레포에서 새로 만듦(`draughts/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. ponder 없음 |
 | 체스 | 이 레포에서 새로 만듦(`chess/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. 오프닝 북, 내 차례에 0.7초씩 미리 생각 |
 | 오목 | 이 레포에서 새로 만듦(`gomoku/engine.js`, 순수 JS) | 브레이크스루와 같은 방식, 규칙도 같이 보냄 | 2.5초, 반복 심화. ponder 없음 |
-| 나인 멘스 모리스 | 이 레포에서 새로 만듦(`morris/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. ponder 없음 |
+| 나인·식스·트웰브 멘스 모리스 | 이 레포에서 새로 만듦(`morris/engine.js`, 순수 JS) | 브레이크스루와 같은 방식, 판 종류도 같이 보냄(워커 하나가 판 종류별 엔진을 둠) | 2.5초, 반복 심화. ponder 없음 |
 | 오와레 | 이 레포에서 새로 만듦(`oware/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화. 내 씨앗이 뿌려지는 연출 동안 미리 생각 시작 |
 | 리버시 | 이 레포에서 새로 만듦(`reversi/engine.js`, 순수 JS) | 브레이크스루와 같은 방식 | 2.5초, 반복 심화(깊이가 빈칸 수에 닿으면 끝까지 읽은 정확한 결과). ponder 없음 |
 | 점과 상자 | 이 레포에서 새로 만듦(`dots/engine.js`, 순수 JS) | 브레이크스루와 같은 방식, 판 크기도 같이 보냄 | 2.5초(가져갈 상자가 있으면 0.7초), 반복 심화. ponder 없음 |
@@ -299,6 +300,11 @@ tools/
 - 평가: 말(손+판) 100, 옮기기 단계의 이동 가능 칸 4·갇힌 말 −8, 두 개 + 빈 하나인 줄 10, 선 밀 6, 차례 6.
 - 테스트(`tools/test-morris.mjs`, CI): 무작위 60판 4,961국면에서 수 집합(제거 포함)이 단순 구현과 일치(제거 585번, 날기 632번 포함),
   손 국면(밀 안 말 보호, 전부 밀이면 예외, 날기, 갇히면 패, 둘이면 패), 밀 완성·막기, 무작위 상대 6전 전승. 시작 국면 1초에 깊이 7, 약 32만 노드.
+- 식스·트웰브 멘스 모리스(2026-11-16, 사용자 요청: "나인 했던 대로"): 같은 엔진·같은 규칙(날기, 3회 반복·50수 무승부)에 판만 다르다(`opts.variant`).
+  식스: 두 겹 사각형 16점, 말 6개, 밀은 변 8개뿐(가운데 잇는 선은 두 점이라 밀이 아님). 트웰브: 나인 판 + 모서리 대각선 넷(이동도 되고 밀도 됨), 말 12개,
+  놓다가 판 24점이 꽉 차면 무승부(`draw:full`, 원래 규칙). 로비에 따로 올리고 전적도 따로(`morris6`, `morris12`). 화면 코드는 `morris/game.js`의 `makeMorris(variant)`
+  하나로, 점 좌표(식스 5×5, 나인·트웰브 7×7)·규칙 시트 문장·대사 일부(`VARIANT_LINES`)·잡담 주제만 다르다. 판의 선은 이웃 표에서 그린다.
+  테스트: 식스 50판 3,364국면, 트웰브 50판 2,754국면(꽉 찬 판 무승부 4번)이 각자 판을 따로 적은 단순 구현과 일치. 시작 국면 0.5초에 식스 깊이 9, 트웰브 7.
 - 화면: 놓을 점, 또는 내 말 → 갈 점(빨간 점)을 누른다. 밀이 서면 옮긴 모양을 미리 보여 주고 가져갈 상대 말(점선)을 누른다. 그 전에는 다른 곳을 누르거나
   Esc로 취소. 상태 줄은 단계와 "놓을 말 7:6" / "남은 말 5:4". 제거된 말은 빨간 낙서로 지워진다.
 

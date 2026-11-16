@@ -17,30 +17,58 @@
 //   | 18--19--20 |       b2 d2 f2
 //   21----22----23       a1 d1 g1
 // Move (int): (from + 1) | to << 5 | (removed + 1) << 10; from = −1 for a placement, removed = −1 for none.
+//
+// Variants (opts.variant), same rules otherwise (flying, the same draws):
+//  'nine'   (default) as above.
+//  'six'    two nested squares joined at the middles, six pieces each; mills only along the sides. Points:
+//             0-----1-----2      a5 c5 e5
+//             | 3---4---5 |      b4 c4 d4
+//             6-7       8-9      a3 b3  d3 e3
+//             | 10--11-12 |      b2 c2 d2
+//             13----14----15     a1 c1 e1
+//  'twelve' the nine board with the four corner diagonals (a7-b6-c5 …), which are also mills; twelve pieces each.
+//           If placing fills the whole board (no removals at all), the game is drawn.
 'use strict';
+const MORRIS_VARIANTS = (() => {
+  const nineAdj = [[1, 9], [0, 2, 4], [1, 14], [4, 10], [1, 3, 5, 7], [4, 13], [7, 11], [4, 6, 8], [7, 12], [0, 10, 21], [3, 9, 11, 18],
+    [6, 10, 15], [8, 13, 17], [5, 12, 14, 20], [2, 13, 23], [11, 16], [15, 17, 19], [12, 16], [10, 19], [16, 18, 20, 22], [13, 19],
+    [9, 22], [19, 21, 23], [14, 22]];
+  const nineMills = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [12, 13, 14], [15, 16, 17], [18, 19, 20], [21, 22, 23],
+    [0, 9, 21], [3, 10, 18], [6, 11, 15], [1, 4, 7], [16, 19, 22], [8, 12, 17], [5, 13, 20], [2, 14, 23]];
+  const nineNames = ['a7', 'd7', 'g7', 'b6', 'd6', 'f6', 'c5', 'd5', 'e5', 'a4', 'b4', 'c4', 'e4', 'f4', 'g4', 'c3', 'd3', 'e3', 'b2', 'd2', 'f2', 'a1', 'd1', 'g1'];
+  const diag = [[0, 3, 6], [2, 5, 8], [21, 18, 15], [23, 20, 17]];
+  const twelveAdj = nineAdj.map((a) => a.slice());
+  for (const [x, y, z] of diag) { twelveAdj[x].push(y); twelveAdj[y].push(x, z); twelveAdj[z].push(y); }
+  const sixLinks = [[0, 1], [1, 2], [2, 9], [9, 15], [15, 14], [14, 13], [13, 6], [6, 0], [3, 4], [4, 5], [5, 8], [8, 12], [12, 11], [11, 10], [10, 7], [7, 3],
+    [1, 4], [6, 7], [8, 9], [11, 14]];
+  const sixAdj = Array.from({ length: 16 }, () => []);
+  for (const [a, b] of sixLinks) { sixAdj[a].push(b); sixAdj[b].push(a); }
+  return {
+    nine: { points: 24, pieces: 9, adj: nineAdj, mills: nineMills, names: nineNames },
+    twelve: { points: 24, pieces: 12, adj: twelveAdj, mills: nineMills.concat(diag), names: nineNames, fullDraw: true },
+    six: { points: 16, pieces: 6, adj: sixAdj, mills: [[0, 1, 2], [2, 9, 15], [13, 14, 15], [0, 6, 13], [3, 4, 5], [5, 8, 12], [10, 11, 12], [3, 7, 10]],
+      names: ['a5', 'c5', 'e5', 'b4', 'c4', 'd4', 'a3', 'b3', 'd3', 'e3', 'b2', 'c2', 'd2', 'a1', 'c1', 'e1'] },
+  };
+})();
 
 function MorrisEngine(opts) {
   opts = opts || {};
   const WHITE = 1, BLACK = 2;
   const WIN = 100000, WIN_BOUND = WIN - 1000, INF = WIN + 1;
-  const ADJ = [[1, 9], [0, 2, 4], [1, 14], [4, 10], [1, 3, 5, 7], [4, 13], [7, 11], [4, 6, 8], [7, 12], [0, 10, 21], [3, 9, 11, 18],
-    [6, 10, 15], [8, 13, 17], [5, 12, 14, 20], [2, 13, 23], [11, 16], [15, 17, 19], [12, 16], [10, 19], [16, 18, 20, 22], [13, 19],
-    [9, 22], [19, 21, 23], [14, 22]];
-  const MILLS = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9, 10, 11], [12, 13, 14], [15, 16, 17], [18, 19, 20], [21, 22, 23],
-    [0, 9, 21], [3, 10, 18], [6, 11, 15], [1, 4, 7], [16, 19, 22], [8, 12, 17], [5, 13, 20], [2, 14, 23]];
-  const MILLS_OF = Array.from({ length: 24 }, (_, p) => MILLS.filter((m) => m.includes(p)));
-  const NAMES = ['a7', 'd7', 'g7', 'b6', 'd6', 'f6', 'c5', 'd5', 'e5', 'a4', 'b4', 'c4', 'e4', 'f4', 'g4', 'c3', 'd3', 'e3', 'b2', 'd2', 'f2', 'a1', 'd1', 'g1'];
+  const VAR = MORRIS_VARIANTS[opts.variant || 'nine'];
+  const NP = VAR.points, PIECES = VAR.pieces, ADJ = VAR.adj, MILLS = VAR.mills, NAMES = VAR.names;
+  const MILLS_OF = Array.from({ length: NP }, (_, p) => MILLS.filter((m) => m.includes(p)));
   const flying = opts.flying !== false;
   const mFrom = (m) => (m & 31) - 1, mTo = (m) => (m >> 5) & 31, mRm = (m) => ((m >> 10) & 31) - 1;
   const enc = (from, to, rm) => (from + 1) | (to << 5) | ((rm + 1) << 10);
 
   // ---------- state ----------
-  const board = new Int8Array(24);
-  const hand = [0, 9, 9], onBoard = [0, 0, 0];
+  const board = new Int8Array(NP);
+  const hand = [0, PIECES, PIECES], onBoard = [0, 0, 0];
   let stm = WHITE, quiet = 0; // quiet: plies since the last removal, counted once all pieces are placed
   let seed = 0x7fb5d329 | 0;
   const rnd = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return seed | 0; };
-  const Z1 = new Int32Array(3 * 24), Z2 = new Int32Array(3 * 24), ZH1 = new Int32Array(3 * 10), ZH2 = new Int32Array(3 * 10);
+  const Z1 = new Int32Array(3 * NP), Z2 = new Int32Array(3 * NP), ZH1 = new Int32Array(3 * 13), ZH2 = new Int32Array(3 * 13);
   for (let i = 0; i < Z1.length; i++) { Z1[i] = rnd(); Z2[i] = rnd(); }
   for (let i = 0; i < ZH1.length; i++) { ZH1[i] = rnd(); ZH2[i] = rnd(); }
   const ZS1 = rnd(), ZS2 = rnd();
@@ -48,12 +76,12 @@ function MorrisEngine(opts) {
   const keys1 = [], keys2 = [], undo = [];
   function rehash() {
     h1 = 0; h2 = 0;
-    for (let p = 0; p < 24; p++) if (board[p]) { h1 ^= Z1[board[p] * 24 + p]; h2 ^= Z2[board[p] * 24 + p]; }
-    for (const c of [WHITE, BLACK]) { h1 ^= ZH1[c * 10 + hand[c]]; h2 ^= ZH2[c * 10 + hand[c]]; }
+    for (let p = 0; p < NP; p++) if (board[p]) { h1 ^= Z1[board[p] * NP + p]; h2 ^= Z2[board[p] * NP + p]; }
+    for (const c of [WHITE, BLACK]) { h1 ^= ZH1[c * 13 + hand[c]]; h2 ^= ZH2[c * 13 + hand[c]]; }
     if (stm === BLACK) { h1 ^= ZS1; h2 ^= ZS2; }
   }
   function setStart() {
-    board.fill(0); hand[1] = hand[2] = 9; onBoard[1] = onBoard[2] = 0; stm = WHITE; quiet = 0;
+    board.fill(0); hand[1] = hand[2] = PIECES; onBoard[1] = onBoard[2] = 0; stm = WHITE; quiet = 0;
     keys1.length = keys2.length = undo.length = 0;
     rehash();
   }
@@ -67,9 +95,9 @@ function MorrisEngine(opts) {
     out.length = 0;
     const opp = 3 - c;
     const base = [];
-    if (hand[c] > 0) { for (let p = 0; p < 24; p++) if (!board[p]) base.push([-1, p]); }
-    else if (canFly(c)) { for (let f = 0; f < 24; f++) if (board[f] === c) for (let t = 0; t < 24; t++) if (!board[t]) base.push([f, t]); }
-    else for (let f = 0; f < 24; f++) if (board[f] === c) for (const t of ADJ[f]) if (!board[t]) base.push([f, t]);
+    if (hand[c] > 0) { for (let p = 0; p < NP; p++) if (!board[p]) base.push([-1, p]); }
+    else if (canFly(c)) { for (let f = 0; f < NP; f++) if (board[f] === c) for (let t = 0; t < NP; t++) if (!board[t]) base.push([f, t]); }
+    else for (let f = 0; f < NP; f++) if (board[f] === c) for (const t of ADJ[f]) if (!board[t]) base.push([f, t]);
     // removable opposing pieces: those not in a mill, or any if all are
     let removable = null;
     for (const [f, t] of base) {
@@ -81,7 +109,7 @@ function MorrisEngine(opts) {
       if (!mill) { out.push(enc(f, t, -1)); continue; }
       if (!removable) {
         const free = [], all = [];
-        for (let p = 0; p < 24; p++) if (board[p] === opp) { all.push(p); if (!inMill(p)) free.push(p); }
+        for (let p = 0; p < NP; p++) if (board[p] === opp) { all.push(p); if (!inMill(p)) free.push(p); }
         removable = free.length ? free : all;
       }
       if (!removable.length) out.push(enc(f, t, -1)); // nothing to take (can't happen in practice)
@@ -93,10 +121,10 @@ function MorrisEngine(opts) {
     const f = mFrom(m), t = mTo(m), r = mRm(m), c = stm, opp = 3 - c;
     undo.push(quiet);
     keys1.push(h1); keys2.push(h2);
-    if (f < 0) { h1 ^= ZH1[c * 10 + hand[c]]; h2 ^= ZH2[c * 10 + hand[c]]; hand[c]--; onBoard[c]++; h1 ^= ZH1[c * 10 + hand[c]]; h2 ^= ZH2[c * 10 + hand[c]]; }
-    else { board[f] = 0; h1 ^= Z1[c * 24 + f]; h2 ^= Z2[c * 24 + f]; }
-    board[t] = c; h1 ^= Z1[c * 24 + t]; h2 ^= Z2[c * 24 + t];
-    if (r >= 0) { board[r] = 0; onBoard[opp]--; h1 ^= Z1[opp * 24 + r]; h2 ^= Z2[opp * 24 + r]; }
+    if (f < 0) { h1 ^= ZH1[c * 13 + hand[c]]; h2 ^= ZH2[c * 13 + hand[c]]; hand[c]--; onBoard[c]++; h1 ^= ZH1[c * 13 + hand[c]]; h2 ^= ZH2[c * 13 + hand[c]]; }
+    else { board[f] = 0; h1 ^= Z1[c * NP + f]; h2 ^= Z2[c * NP + f]; }
+    board[t] = c; h1 ^= Z1[c * NP + t]; h2 ^= Z2[c * NP + t];
+    if (r >= 0) { board[r] = 0; onBoard[opp]--; h1 ^= Z1[opp * NP + r]; h2 ^= Z2[opp * NP + r]; }
     quiet = r >= 0 || hand[1] + hand[2] > 0 ? 0 : quiet + 1;
     stm = opp; h1 ^= ZS1; h2 ^= ZS2;
   }
@@ -111,10 +139,11 @@ function MorrisEngine(opts) {
   }
   const SCR = [];
   function legalMoves() { return gen(stm, []).slice(); }
-  // the side to move: 'lose' (two pieces left or no move), 'draw:repetition', 'draw:quiet', or ''
+  const full = () => { for (let p = 0; p < NP; p++) if (!board[p]) return false; return true; };
+  // the side to move: 'lose' (two pieces left or no move), 'draw:repetition', 'draw:quiet', 'draw:full' (twelve), or ''
   function status() {
     if (total(stm) < 3) return 'lose';
-    if (!gen(stm, SCR).length) return 'lose';
+    if (!gen(stm, SCR).length) return VAR.fullDraw && full() ? 'draw:full' : 'lose';
     if (quiet >= 100) return 'draw:quiet';
     let n = 0;
     for (let i = keys1.length - 2; i >= 0 && i >= keys1.length - 1 - quiet; i -= 2) if (keys1[i] === h1 && keys2[i] === h2) n++;
@@ -130,7 +159,7 @@ function MorrisEngine(opts) {
     if (total(c) < 3) return -WIN;
     if (!canFly(c) && hand[c] === 0) {
       let mob = 0, blocked = 0;
-      for (let p = 0; p < 24; p++) if (board[p] === c) {
+      for (let p = 0; p < NP; p++) if (board[p] === c) {
         let free = 0;
         for (const t of ADJ[p]) if (!board[t]) free++;
         mob += free; if (!free) blocked++;
@@ -170,7 +199,7 @@ function MorrisEngine(opts) {
     if (total(stm) < 3) return -(WIN - p);
     if (p > 0 && (quiet >= 100 || repeated())) return 0;
     const moves = gen(stm, MV[p]);
-    if (!moves.length) return -(WIN - p);
+    if (!moves.length) return VAR.fullDraw && full() ? 0 : -(WIN - p);
     if (depth <= 0) return evaluate();
     const idx = h1 & TT_MASK;
     let ttMove = 0;
@@ -250,10 +279,10 @@ function MorrisEngine(opts) {
 
   setStart();
   return {
-    WHITE, BLACK, WIN, WIN_BOUND, ADJ, MILLS, NAMES, mFrom, mTo, mRm,
+    WHITE, BLACK, WIN, WIN_BOUND, ADJ, MILLS, NAMES, NP, PIECES, mFrom, mTo, mRm,
     setStart, setPosition, legalMoves, play: make, undo: unmake, status, think, evaluate, perft, notation, inMill, phaseOf,
     hand: (c) => hand[c], onBoard: (c) => onBoard[c],
     get stm() { return stm; }, get board() { return board; },
   };
 }
-if (typeof module !== 'undefined') module.exports = { MorrisEngine };
+if (typeof module !== 'undefined') module.exports = { MorrisEngine, MORRIS_VARIANTS };

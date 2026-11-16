@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { backgammon: 9000, oware: 9000, reversi: 9000, dots: 12000, go: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000, janggi: 9000, yukgak: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { backgammon: 9000, oware: 9000, reversi: 9000, dots: 12000, go: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000, janggi: 9000, yukgak: 9000, morris6: 9000, morris12: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -91,7 +91,7 @@ async function boardGame(id, sideIdx) {
       await sq(d.legal[Math.floor(Math.random() * d.legal.length)]).click();
     } else if (id === 'oware') { // moves: the pit (0–11); the pits are the board's only buttons, in pit order
       await sq(d.legal[Math.floor(Math.random() * d.legal.length)]).click();
-    } else if (id === 'morris') { // moves: (from + 1) | to << 5 | (removed + 1) << 10; tap from (if any), to, removed (if any)
+    } else if (id === 'morris' || id === 'morris6' || id === 'morris12') { // moves: (from + 1) | to << 5 | (removed + 1) << 10; tap from (if any), to, removed (if any)
       const m = d.legal[Math.floor(Math.random() * d.legal.length)], f = (m & 31) - 1, t = (m >> 5) & 31, r = ((m >> 10) & 31) - 1;
       if (f >= 0) await sq(f).click();
       await sq(t).click();
@@ -175,6 +175,8 @@ await boardGame('draughts', 1);
 await boardGame('chess', 1);
 await boardGame('gomoku', 1);
 await boardGame('morris', 1);
+await boardGame('morris6', 1);
+await boardGame('morris12', 0);
 await boardGame('oware', 1);
 await boardGame('reversi', 1);
 await boardGame('dots', 1);

@@ -7,7 +7,7 @@ import { loadRecord, visit, store } from './shared/record.js';
 import { offline } from './shared/offline.js';
 
 const shelf = document.getElementById('shelf');
-document.getElementById('kinds').insertAdjacentHTML('beforebegin', perchHtml(NAME));
+shelf.insertAdjacentHTML('beforebegin', perchHtml(NAME));
 const perch = document.querySelector('.perch');
 const lines = { ...COMMON, ...LOBBY };
 let pc = null;

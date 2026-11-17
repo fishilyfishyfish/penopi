@@ -106,7 +106,7 @@ tools/
 ## 게임 추가하기
 
 1. 폴더 하나: `<id>/index.html`(breakthrough/index.html을 복사해 제목과 엔진 스크립트만 바꿈), `game.js`, `worker.js`, `lines.js`, `game.css`, `thumb.svg`.
-2. `games.js`에 한 줄: `{ id, name, blurb, pitch }`.
+2. `games.js`에 한 줄: `{ id, name, kind, blurb, pitch }`. `kind`는 로비 필터 칸(`move` 말 옮기기, `line` 잇기, `take` 차지하기), 배우는 중인 게임은 `practice: true`로 "연습 중" 칸에도 나온다.
 
 `game.js`는 `shared/shell.js` 맨 위에 적힌 객체를 export default 한다:
 `id, name, sides[{id, html, first}], options?, lines, chat, rules{html, note}, longGame, mount(api), start(side, opts), reset()`.
@@ -479,7 +479,7 @@ tools/
 - 백개먼: SVG 한 장(원래 `board-view.js`의 좌표 그대로). 포인트는 펜 삼각형, 하나 걸러 빗금. 체커는 LOA 튀르크 말처럼 칠한 원.
   매번 다시 그려도 떨리지 않게 손떨림은 칸 번호로 정한 고정값.
 - 로비(사용자 요청, 2026-11-14): 카드를 두 줄로 놓고, 최근에 연 게임이 앞에 온다(shell이 `penopi.<id>.opened`에 연 시각을 적고 로비가 그 순으로,
-  안 연 게임은 `games.js` 순서). 폭 560px 이하에서는 카드에 이름과 전적만(설명은 숨김). 게임별 전적을 카드에 표시. 로비 대사에 게임 수를 박지 않는다.
+  안 연 게임은 `games.js` 순서). 카드 위 종류 필터(전부·말 옮기기·잇기·차지하기·연습 중, 마지막 선택은 `penopi.lobby.filter`에 기억), 선반 아래 "지금까지 N판" 합계(연습 게임 제외). 말풍선이 석 줄이어도 제목을 안 가리게 로비 페르치 높이는 176px. 폭 560px 이하에서는 카드에 이름과 전적만(설명은 숨김). 게임별 전적을 카드에 표시. 로비 대사에 게임 수를 박지 않는다.
 - `window.__penopi.debug()`는 스모크 테스트용 읽기 전용 핸들.
 
 ## 자주 쓰는 명령

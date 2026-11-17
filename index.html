@@ -28,13 +28,24 @@
 @media (max-width: 560px) { .card .blurb { display: none; } .shelf { gap: 12px; padding: 12px; } }
 .foot { width: var(--size); max-width: 100%; color: var(--muted); font-size: 15px; text-align: center; margin: 0; }
 .stage { justify-content: flex-start; padding-top: max(16px, 4vh); }
+/* a three-line bubble is taller than the perch: leave room so it never covers the title */
+.perch { height: 176px; }
+.kinds { flex: none; width: var(--size); max-width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 2px 0 0; position: relative; z-index: 1; }
+.kind { flex: none; white-space: nowrap; font: inherit; font-size: 17px; line-height: 1; min-height: 40px; padding: 6px 12px; color: var(--ink); background: var(--sheet); border: 2.4px solid var(--ink); border-radius: 15px 225px 15px 255px / 255px 15px 225px 15px; cursor: pointer; touch-action: manipulation; }
+.kind .n { color: var(--muted); font-size: 14px; }
+.kind[aria-pressed="true"] { background: var(--ink); color: var(--sheet); box-shadow: 2px 3px 0 var(--pen); }
+.kind[aria-pressed="true"] .n { color: var(--sheet); }
+.kind:focus-visible { outline: 2.6px dashed var(--pen); outline-offset: 3px; }
+.tally { min-height: 1.2em; }
 </style>
 </head>
 <body>
 <main class="stage" id="stage">
   <div class="bar"><h1 class="title">페노피의 보드게임</h1></div>
   <!-- perch: filled by lobby.js -->
+  <div class="kinds" id="kinds" role="group" aria-label="게임 종류"></div>
   <nav class="shelf" id="shelf" aria-label="게임 목록"></nav>
+  <p class="foot tally" id="tally"></p>
   <p class="foot">한 번 열어 둔 게임은 인터넷이 없어도 열려요.</p>
 </main>
 <script type="module" src="lobby.js"></script>

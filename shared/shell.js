@@ -27,6 +27,7 @@ import { COMMON, CHAT } from './lines.js';
 import { mergeLines, createTalk } from './talk.js';
 import { loadRecord, visit, store } from './record.js';
 import { offline } from './offline.js';
+import './font.js'; // applies the owner's-font easter egg if it is on
 
 export function boot(game) {
   document.title = `${game.name} · ${NAME}`;

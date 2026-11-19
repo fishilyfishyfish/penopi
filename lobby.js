@@ -5,6 +5,7 @@ import { COMMON, LOBBY } from './shared/lines.js';
 import { createTalk } from './shared/talk.js';
 import { loadRecord, visit, store } from './shared/record.js';
 import { offline } from './shared/offline.js';
+import { toggleMine } from './shared/font.js';
 
 const shelf = document.getElementById('shelf');
 shelf.insertAdjacentHTML('beforebegin', perchHtml(NAME));
@@ -58,6 +59,14 @@ kinds.addEventListener('click', (e) => {
 render();
 const tally = document.getElementById('tally');
 tally.textContent = games ? `지금까지 ${games}판: ${NAME} ${w}승 · 너 ${l}승` : '';
+
+// easter egg: tap the title 7 times in a row (each tap within 1.2 s of the last) to swap in the owner's own font
+let taps = 0, lastTap = 0;
+document.querySelector('.title').addEventListener('click', () => {
+  const now = Date.now();
+  taps = now - lastTap < 1200 ? taps + 1 : 1; lastTap = now;
+  if (taps >= 7) { taps = 0; talk.say(toggleMine() ? 'fontOn' : 'fontOff'); }
+});
 
 const v = visit();
 if (v.first) talk.say('lobbyFirst');

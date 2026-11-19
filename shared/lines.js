@@ -390,4 +390,7 @@ export const LOBBY = {
     "전부 합치면 {w} 대 {l}. 앞은 나야.",
   ],
   lobbyRecordLosing: ["합쳐서 {w} 대 {l}... 숫자가 좀 이상하네. 다시 세 볼게."],
+  // easter egg: tapping the title 7 times swaps the lettering for the owner's own font
+  fontOn: ["어, 글씨가 달라졌다. 이건 주인이 직접 그린 글씨야. 나도 처음 봐.", "이 글씨 예쁘지? 주인 손으로 그린 거래. 비밀이야."],
+  fontOff: ["원래 글씨로 돌아왔어. 이쪽이 더 익숙하네.", "비밀 글씨는 여기까지. 다시 누르면 또 나와."],
 };

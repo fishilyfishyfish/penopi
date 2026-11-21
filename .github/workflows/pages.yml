@@ -13,8 +13,11 @@ concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: true
 
+# Everything that can run side by side does (it used to be one 9-minute line): the WASM build + site assembly, the Rust
+# tests, the JS engine tests, and the browser smoke test cut into five pieces. Deploy waits for all of them, so nothing
+# untested goes out.
 jobs:
-  build:
+  wasm:
     # 24.04: Playwright 1.56.1 has no Chromium build for ubuntu-latest (26.04)
     runs-on: ubuntu-24.04
     steps:
@@ -33,7 +36,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             backgammon/engine/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('*/engine/Cargo.lock', 'backgammon/rust-toolchain.toml') }}
+          key: cargo-wasm-${{ runner.os }}-${{ hashFiles('*/engine/Cargo.lock', 'backgammon/rust-toolchain.toml') }}
 
       # must match wasm-bindgen in both engines' Cargo.lock
       - uses: actions/cache@v4
@@ -45,74 +48,15 @@ jobs:
         if: steps.wb-cache.outputs.cache-hit != 'true'
         run: cargo +stable install wasm-bindgen-cli --version 0.2.129 --locked
 
-      - name: Test engines
-        run: |
-          (cd backgammon/engine && cargo test --release --locked)
-
-      - name: Lines fit the font
-        run: |
-          pip install --quiet fonttools brotli
-          python3 tools/check-lines.py
-
       - name: Build WASM
         run: ./tools/build-wasm.sh
 
-      - uses: actions/setup-node@v4
+      # the smoke test pieces serve the repo itself, so they need the built engine too
+      - uses: actions/upload-artifact@v4
         with:
-          node-version: 22
-      # rules (vs a naive implementation), forced-win search (vs a plain solver), strength (vs random/greedy)
-      - name: Test Breakthrough engine
-        run: node tools/test-breakthrough.mjs
-
-      # perft vs published values, every move vs a naive implementation, the capture rules by hand, strength
-      - name: Test draughts engine
-        run: node tools/test-draughts.mjs
-
-      # perft on the standard test positions, rules and draws, forced mates, strength
-      - name: Test chess engine
-        run: node tools/test-chess.mjs
-
-      # win detection vs a naive counter under all three rules, forbidden shapes by hand, five/block/VCF, strength
-      - name: Test gomoku engine
-        run: node tools/test-gomoku.mjs
-
-      # every move of random games vs a naive implementation, mill/flying/loss rules by hand, strength
-      - name: Test Nine Men's Morris engine
-        run: node tools/test-morris.mjs
-
-      # every move of random games vs a naive implementation, captures/grand slam/feeding by hand, endings vs a solver, strength
-      - name: Test oware engine
-        run: node tools/test-oware.mjs
-
-      # perft vs published counts, every move of random games vs a naive implementation, exact endings vs an exhaustive search, strength
-      - name: Test Reversi engine
-        run: node tools/test-reversi.mjs
-
-      # every line of random games vs a naive implementation, exact results vs a plain full search, strength
-      - name: Test Dots and Boxes engine
-        run: node tools/test-dots.mjs
-
-      # every move of random games vs a naive implementation (captures, suicide, superko), area count, dead stones, strength
-      - name: Test Go engine
-        run: node tools/test-go.mjs
-      - name: Test Janggi engine
-        run: node tools/test-janggi.mjs
-      - name: Test 육각잇기 engine
-        run: node tools/test-yukgak.mjs
-      - name: Test Shogi engine
-        run: node tools/test-shogi.mjs
-
-      - uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-1.56.1
-      # plays every game in Chromium for a while (tools/smoke.mjs)
-      - name: Smoke test
-        run: |
-          npm install --no-save --no-package-lock playwright@1.56.1
-          npx playwright install --with-deps chromium
-          node tools/smoke.mjs 6
-          rm -rf node_modules
+          name: wasm-pkg
+          path: backgammon/pkg
+          retention-days: 1
 
       # the site: everything but the engine sources and tools, plus the list of files for offline use (sw.js)
       - name: Assemble site
@@ -122,9 +66,84 @@ jobs:
         with:
           path: _site
 
+  rust-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal
+          (cd backgammon && rustup show active-toolchain || rustup toolchain install)
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            backgammon/engine/target
+          key: cargo-test-${{ runner.os }}-${{ hashFiles('*/engine/Cargo.lock', 'backgammon/rust-toolchain.toml') }}
+      - name: Test engines
+        run: (cd backgammon/engine && cargo test --release --locked)
+
+  js-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Lines fit the font
+        run: |
+          pip install --quiet fonttools brotli
+          python3 tools/check-lines.py
+      # Each engine's test: rules vs a naive implementation, published perft values where they exist, hand-made positions,
+      # forced wins, strength vs random/greedy. Four at a time (the runner has four cores); a failing one prints its log.
+      - name: Test engines (JS)
+        run: |
+          mkdir -p /tmp/tl && rm -f /tmp/tl/failed
+          printf '%s\n' breakthrough draughts chess gomoku morris oware reversi dots go janggi yukgak shogi |
+            xargs -P 4 -I{} sh -c 'if node tools/test-{}.mjs > /tmp/tl/{}.log 2>&1; then echo "ok   {}"; else echo "FAIL {}"; echo {} >> /tmp/tl/failed; fi'
+          if [ -f /tmp/tl/failed ]; then
+            for t in $(cat /tmp/tl/failed); do echo "=== $t ==="; cat /tmp/tl/$t.log; done
+            exit 1
+          fi
+
+  # plays every game in Chromium for a while (tools/smoke.mjs); each piece plays only its games (ONLY)
+  smoke:
+    needs: wasm
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        only:
+          - breakthrough,draughts,chess,gomoku
+          - morris,morris6,morris12,oware,reversi
+          - dots,go,janggi
+          - shogi,yukgak
+          - backgammon
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: wasm-pkg
+          path: backgammon/pkg
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-1.56.1
+      - name: Smoke test (${{ matrix.only }})
+        env:
+          ONLY: ${{ matrix.only }}
+        run: |
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node tools/smoke.mjs 6
+
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: build
+    needs: [wasm, rust-tests, js-tests, smoke]
     runs-on: ubuntu-latest
     permissions:
       pages: write

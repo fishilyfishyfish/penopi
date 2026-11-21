@@ -8,6 +8,12 @@
 @font-face { font-family: "Penopi Local"; font-weight: 700; font-display: swap; size-adjust: 125%; src: url("fonts/Penopi.woff2") format("woff2"); }
 @font-face { font-family: "Gaegu Local"; font-weight: 400; font-display: swap; src: url("fonts/Gaegu-Regular.woff2") format("woff2"); }
 @font-face { font-family: "Gaegu Local"; font-weight: 700; font-display: swap; src: url("fonts/Gaegu-Bold.woff2") format("woff2"); }
+:root {
+  /* Gaegu's Hangul sits wide (820 units advance for ~680 of ink, and a 420 space): reading text is pulled in a little */
+  --track: -.055em; --wordgap: -.03em;
+}
+:root.mine { --track: 0em; --wordgap: 0em; } /* the owner's font is already tightened (shared/font.js) */
+.bubble, .sheet, .snark { letter-spacing: var(--track); word-spacing: var(--wordgap); }
 :root.mine { --font: "Penopi Local", "Gaegu Local", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif; }
 :root {
   --paper: #f7f6f1;

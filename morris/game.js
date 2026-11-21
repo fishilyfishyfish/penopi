@@ -5,6 +5,7 @@
 // before the last step cancels.
 import { LINES, VARIANT_LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
+import { easePlan } from '../shared/ease.js';
 import { reduced } from '../shared/character.js';
 
 
@@ -46,14 +47,15 @@ export function makeMorris(variant) {
     return engine;
   }
   async function think(time) {
+    const ez = easePlan('morris', time); time = ez.time; // 봐주기 (shared/ease.js)
     try {
-      return await client().call({ variant, moves: moves.slice(), time }, { timeout: HARD_LIMIT });
+      return await client().call({ variant, moves: moves.slice(), time, depth: ez.depth }, { timeout: HARD_LIMIT });
     } catch (err) {
       if (/다시 시작/.test(err.message)) return null;
       if (!(err instanceof TimeoutError)) console.warn(err);
       if (!localE) localE = globalThis.MorrisEngine({ ttBits: 16, variant });
       localE.setStart(); for (const m of moves) localE.play(m);
-      return localE.think({ time: Math.min(time, 600) });
+      return localE.think({ time: Math.min(time, 600), depth: ez.depth });
     }
   }
   async function engineMove() {

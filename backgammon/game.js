@@ -452,10 +452,14 @@ function stop() {
   g++;
   if (client) client.restart();
 }
-async function startBoard() {
+// 봐주기 (shared/ease.js): backgammon's less-effort Penopi is one of the engine's rated bots (weights/bots.json: a noisy
+// pick among the engine's best moves plus some human habits), 하린 (1500) on 1, 달수 (1000) on 2; the full Penopi is 팔라메데스 (1890)
+const EASE_BOT = { 0: 'palamedes', 1: 'harin', 2: 'dalsu' };
+let easeLv = '0'; // the 봐주기 level of the game being played (a match's next games keep it)
+async function startBoard(ease = easeLv) {
   S.board = await call('start_board');
   const bots = await call('bots_json');
-  const i = bots.findIndex((x) => x.id === 'palamedes');
+  const i = bots.findIndex((x) => x.id === (EASE_BOT[ease] || 'palamedes'));
   if (i >= 0) BOT = i;
 }
 
@@ -523,6 +527,7 @@ export default {
     S.match = len ? { length: len, score: [0, 0], post: false, lastCrawford: false } : null;
     Object.assign(S, { phase: 'idle', color: colour, dice: null, opening: null, groups: [], ts: null, swap: false, lastMove: null,
       cube: { value: 1, owner: null }, turns: 0, verdict: undefined, said: {} });
+    easeLv = opts.ease || '0';
     try { await startBoard(); } catch { api.status('엔진을 불러오지 못했어'); return; }
     if (my !== g) return;
     opening();

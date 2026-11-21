@@ -5,6 +5,7 @@
 // crossed out, and the area is counted.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
+import { easePlan } from '../shared/ease.js';
 import { reduced } from '../shared/character.js';
 
 const THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -30,6 +31,7 @@ function client() {
   return engine;
 }
 async function think(time) {
+  const ez = easePlan('go', time); time = ez.time; // 봐주기 (shared/ease.js): less time
   try {
     return await client().call({ moves: moves.slice(), time }, { timeout: HARD_LIMIT });
   } catch (err) {

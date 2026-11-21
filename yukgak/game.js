@@ -5,6 +5,7 @@
 // 백 may take 흑's first stone ("바꾸기" under the board), which turns into a 백 stone at the mirrored cell.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
+import { easePlan } from '../shared/ease.js';
 import { reduced } from '../shared/character.js';
 
 const THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -33,6 +34,7 @@ function client() {
   return engine;
 }
 async function think(time) {
+  const ez = easePlan('yukgak', time); time = ez.time; // 봐주기 (shared/ease.js): less time
   try {
     return await client().call({ size: N, moves: moves.slice(), time }, { timeout: HARD_LIMIT });
   } catch (err) {

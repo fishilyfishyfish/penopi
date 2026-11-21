@@ -28,10 +28,13 @@ import { mergeLines, createTalk } from './talk.js';
 import { loadRecord, visit, store } from './record.js';
 import { offline } from './offline.js';
 import './font.js'; // applies the owner's-font easter egg if it is on
+import { EASE_OPTION, EASE_LINES, setEase } from './ease.js';
 
 export function boot(game) {
   document.title = `${game.name} · ${NAME}`;
-  const lines = mergeLines(COMMON, game.lines);
+  // every game gets the 봐주기 option (shared/ease.js) above its side buttons
+  if (!(game.options || []).some((o) => o.key === 'ease')) game.options = (game.options || []).concat(EASE_OPTION);
+  const lines = mergeLines({ ...COMMON, ...EASE_LINES }, game.lines);
   const topics = CHAT.concat(game.chat || []);
   // a practice game keeps no record: a blank one that is never saved
   const record = game.practice ? { rec: { games: 0, penopi: 0, human: 0, draws: 0, streak: 0, hstreak: 0 }, add: () => 0, reset() {} } : loadRecord(game.id, game.legacyRecord);
@@ -68,6 +71,13 @@ export function boot(game) {
 
   let pc = null; // Penopi's controls, once animated
   const talk = createTalk(lines, perch.querySelector('.bubble'), () => pc && pc.place(pc.x, pc.walking()));
+  // on 봐주기 (1 or 2) the 'ease:<name>' line replaces <name>; the level is the one picked for the game being played,
+  // or the picked option before the game starts
+  let gameEase = '0';
+  const easeNow = () => (started ? gameEase : opts.ease || '0');
+  const onEase = () => easeNow() !== '0';
+  const rawSay = talk.say;
+  talk.say = (key, vars) => rawSay(onEase() && talk.has('ease:' + key) ? 'ease:' + key : key, vars);
   // A line about a move (mine or Penopi's) lasts until the turn after next begins: a remark on my move is gone by
   // the time it's my turn again, so "못 들어오네" can't read as if it were about the new turn. Other lines
   // (small talk, nagging, poking, the start) stay until something else is said.
@@ -89,11 +99,13 @@ export function boot(game) {
   // `inPlay` from my first move until the end; the same fact in localStorage in case the page goes away unnoticed
   const liveKey = `penopi.${game.id}.live`;
   let inPlay = false, armed = 0;
-  const setLive = (on) => { inPlay = on; if (!game.practice) store.set(liveKey, on ? Date.now() : 0); };
+  // a game on 봐주기 keeps no record and can't be forfeited: Penopi didn't try, so winning or losing it means nothing
+  const noRec = () => game.practice || onEase();
+  const setLive = (on) => { inPlay = on; if (!noRec()) store.set(liveKey, on ? Date.now() : 0); };
   function forfeit() { // record the abandoned game as Penopi's win
     if (!inPlay) return false;
     setLive(false);
-    if (!game.practice) record.add('penopi');
+    if (!noRec()) record.add('penopi');
     return true;
   }
   let prevP = null, flags = {}, turnStart = 0, slowTimer = 0, chatTimer = 0, winTimer = 0;
@@ -187,13 +199,14 @@ export function boot(game) {
       setLive(false); disarm();
       stopTimers(); turnStart = 0;
       pc.thinking(false);
-      const broke = record.add(winner);
+      const broke = onEase() ? 0 : record.add(winner);
       if (text) status(text);
       else status(winner === 'draw' ? '무승부' : winner === 'human' ? '내가 이겼다' : `${NAME}가 이겼다`);
       let follow, fv = vars;
+      if (onEase() && winner !== 'draw') key = null; // the specific lines (gammon, mate...) are Penopi gloating; not on 봐주기
       if (winner === 'draw') { if (!(key && say(key, vars))) say('draw', vars); }
       else if (winner === 'human') {
-        if (!(key && say(key, vars))) say(rec.human === 1 ? 'humanWinFirst' : 'humanWin', vars);
+        if (!(key && say(key, vars))) say(rec.human === 1 && !onEase() ? 'humanWinFirst' : 'humanWin', vars);
         follow = 'humanWin2';
         pc.sunk(true); // stays half hidden until the next game
       } else {
@@ -213,6 +226,7 @@ export function boot(game) {
   // ---------- picking a side, starting, starting over ----------
   function start(i) {
     gameId++;
+    gameEase = opts.ease || '0'; setEase(gameEase);
     started = true; side = game.sides[i].id;
     prevP = null; flags = {};
     turnNo = 0; lastTurn = null; bound = null;
@@ -222,7 +236,8 @@ export function boot(game) {
     $('btn-new').hidden = false;
     stage.classList.add('playing');
     const first = game.sides[i].first;
-    if (rec.hstreak >= 2) say('humanStreak', { k: rec.hstreak });
+    if (onEase()) say(first === true ? 'startHuman' : first === false ? 'startEngine' : 'startColor');
+    else if (rec.hstreak >= 2) say('humanStreak', { k: rec.hstreak });
     else if (rec.streak >= 2 && Math.random() < 0.7) say('streak', { k: rec.streak });
     else if (rec.games > 0 && (rec.games + 1) % 10 === 0) say('milestone', { n: rec.games + 1 });
     else if (rec.games > 0 && Math.random() < 0.6) say('rematch', { w: rec.penopi, l: rec.human });
@@ -234,7 +249,7 @@ export function boot(game) {
   const newBtn = $('btn-new');
   function disarm() { if (armed) { clearTimeout(armed); armed = 0; newBtn.textContent = '새 게임'; newBtn.classList.remove('warn'); } }
   function onNew() {
-    if (inPlay && !game.practice) {
+    if (inPlay && !noRec()) {
       if (!armed) {
         newBtn.textContent = '기권하고 새 게임'; newBtn.classList.add('warn');
         armed = setTimeout(disarm, 5000);
@@ -251,10 +266,10 @@ export function boot(game) {
     setLive(false);
     newGame();
   }
-  addEventListener('pagehide', () => { if (forfeit() && !game.practice) store.set(`penopi.${game.id}.left`, 1); }); // remembered for the next visit's first line
+  addEventListener('pagehide', () => { if (forfeit() && !noRec()) store.set(`penopi.${game.id}.left`, 1); }); // remembered for the next visit's first line
   function newGame() {
     gameId++;
-    started = false; side = null;
+    started = false; side = null; gameEase = '0'; setEase('0');
     stopTimers(); turnStart = 0; clearTimeout(winTimer);
     pc.sunk(false); pc.thinking(false);
     tray.hidden = true; tray.innerHTML = '';
@@ -278,6 +293,7 @@ export function boot(game) {
   });
   stage.querySelectorAll('[data-opt]').forEach((b) => b.addEventListener('click', () => {
     opts[b.dataset.opt] = b.dataset.val; store.set(optKey, opts); showOpts();
+    if (b.dataset.opt === 'ease' && rawSay('ease:easePick' + b.dataset.val)) bound = null; // Penopi's reaction to being asked (or not)
     if (game.optionChanged) game.optionChanged(b.dataset.opt, b.dataset.val);
   }));
   showOpts();
@@ -288,7 +304,7 @@ export function boot(game) {
   const rulesEl = $('rules'), resetBtn = $('btn-reset');
   let rulesSeen = 0, wiped = false;
   function showRecord() {
-    $('record').textContent = game.practice ? `${NAME}가 아직 연습 중이라 전적은 안 적어.` : `전적: ${NAME} ${rec.penopi}승 · 너 ${rec.human}승${rec.draws ? ` · 무승부 ${rec.draws}` : ''} (두다 말고 나가면 진 걸로 적어)`;
+    $('record').textContent = game.practice ? `${NAME}가 아직 연습 중이라 전적은 안 적어.` : `전적: ${NAME} ${rec.penopi}승 · 너 ${rec.human}승${rec.draws ? ` · 무승부 ${rec.draws}` : ''} (두다 말고 나가면 진 걸로 적어. 봐줘 달라고 한 판은 안 적어)`;
     resetBtn.textContent = '전적 지우기'; resetBtn.dataset.armed = '';
   }
   function resetSnark(key) {

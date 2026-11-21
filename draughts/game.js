@@ -5,6 +5,7 @@
 // squares it lands on along the way.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
+import { easePlan } from '../shared/ease.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -35,14 +36,15 @@ function client() {
   return engine;
 }
 async function think(time) {
+  const ez = easePlan('draughts', time); time = ez.time; // 봐주기 (shared/ease.js)
   try {
-    return await client().call({ moves: moves.map(plain), time }, { timeout: HARD_LIMIT });
+    return await client().call({ moves: moves.map(plain), time, depth: ez.depth }, { timeout: HARD_LIMIT });
   } catch (err) {
     if (/다시 시작/.test(err.message)) return null;
     if (!(err instanceof TimeoutError)) console.warn(err);
     if (!localE) localE = globalThis.DraughtsEngine({ ttBits: 16 });
     localE.setStart(); for (const m of moves) localE.play(m);
-    return localE.think({ time: Math.min(time, 600) });
+    return localE.think({ time: Math.min(time, 600), depth: ez.depth });
   }
 }
 async function engineMove() {

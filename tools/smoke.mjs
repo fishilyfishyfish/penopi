@@ -34,6 +34,8 @@ let failed = false;
 const fail = (msg) => { failed = true; console.log('FAIL', msg); };
 
 const PHONE = Number(process.env.PHONE || 0);
+// EASE=1 or 2: every game is played on 봐주기 (the option is stored per game, like a click on the button would)
+const EASE = process.env.EASE || '';
 async function page(url) {
   const p = await browser.newPage({ viewport: { width: 400, height: 860 } });
   if (PHONE) {
@@ -45,6 +47,7 @@ async function page(url) {
       new PerformanceObserver((l) => { for (const e of l.getEntries()) { const L = globalThis.__long; L.max = Math.max(L.max, e.duration); L.total += e.duration; L.n++; } }).observe({ entryTypes: ['longtask'] });
     });
   }
+  if (EASE) await p.addInitScript((lv) => { for (const k of Object.keys(localStorage)) if (k.endsWith('.options')) localStorage.removeItem(k); const id = location.pathname.split('/').filter(Boolean).pop(); if (id) localStorage.setItem(`penopi.${id}.options`, JSON.stringify({ ease: lv })); }, EASE);
   const errors = [];
   p.on('pageerror', (e) => errors.push(String(e.stack || e)));
   p.on('console', (m) => { if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push(m.text()); });

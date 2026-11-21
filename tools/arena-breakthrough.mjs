@@ -13,7 +13,16 @@ const pairs = Number(pairsArg || 10);
 let seed = 7;
 const rnd = (n) => { seed = (Math.imul(seed, 1103515245) + 12345) & 0x7fffffff; return seed % n; };
 
+import { setEase, easePlan, PLANS } from '../shared/ease.js';
+if (process.env.EASE_PLAN) Object.assign(PLANS, JSON.parse(process.env.EASE_PLAN)); // tuning: EASE_PLAN='{"chess":[{...},{...}]}'
+// "ease1:2500" / "ease2:2500": what the site's 봐주기 level 1 / 2 asks of the engine (shared/ease.js), full time cap after the colon
+function easePlayer(spec) {
+  const [lv, cap] = spec.slice(4).split(':');
+  const E = BreakthroughEngine({ ttBits: 18 });
+  return (moves) => { E.setStart(); for (const m of moves) E.play(m); setEase(lv); const ez = easePlan('breakthrough', Number(cap || 2500)); setEase('0'); return E.think({ time: ez.time, depth: ez.depth }).move; };
+}
 function player(spec) {
+  if (spec.startsWith('ease')) return easePlayer(spec);
   const [head, ...kv] = spec.split(',');
   const nodes = Number(head.split(':')[1]);
   const weights = {};

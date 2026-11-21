@@ -7,6 +7,8 @@ import { LINES } from './lines.js';
 import { BOOK, parseLine } from './book.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { SHAPES } from './pieces.js';
+import { MOVE_FIGS, CASTLE_FIGS, EP_FIG } from './figures.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -247,15 +249,6 @@ const visual = (s) => { const r = s >> 4, f = s & 7; return human === 0 ? (7 - r
 const squareAt = (v) => { const vr = v >> 3, vf = v & 7; return human === 0 ? (7 - vr) * 16 + vf : vr * 16 + (7 - vf); };
 const centre = (s) => { const v = visual(s); return [(v & 7) * 100 + 50, (v >> 3) * 100 + 50]; };
 const sqName = (s) => 'abcdefgh'[s & 7] + ((s >> 4) + 1);
-// pen doodles, 40×40; white pieces paper with ink lines, black pieces ink with paper details
-const SHAPES = {
-  1: '<path class="b" d="M14 33 C15 27 17 23 20 21 C23 23 25 27 26 33 Z"/><circle class="b" cx="20" cy="15" r="5.5"/>',
-  2: '<path class="b" d="M13 33 C13 26 16 23 19 19 C15 20 12 19 11.5 16 C13 12 17 9 21 8 L23 5 L25 8.5 C29 12 30 19 28.5 33 Z"/><circle class="d" cx="19" cy="12.5" r="1.3"/>',
-  3: '<path class="b" d="M14 33 C14 28 15 25 17.5 23 C13.5 19 15 12 20 8 C25 12 26.5 19 22.5 23 C25 25 26 28 26 33 Z"/><path class="l" d="M22 12.5 L18.5 17"/><circle class="b" cx="20" cy="6" r="2"/>',
-  4: '<path class="b" d="M12.5 33 L13.5 18 L12 10 H16 V13 H18.5 V10 H21.5 V13 H24 V10 H28 L26.5 18 L27.5 33 Z"/><path class="l" d="M14 18 H26"/>',
-  5: '<path class="b" d="M11 33 L9 14 L14.5 22 L16 10 L20 20.5 L24 10 L25.5 22 L31 14 L29 33 Z"/><circle class="b" cx="9" cy="12.5" r="2"/><circle class="b" cx="16" cy="8.5" r="2"/><circle class="b" cx="24" cy="8.5" r="2"/><circle class="b" cx="31" cy="12.5" r="2"/>',
-  6: '<path class="b" d="M12 33 C12 25 14 21 20 19.5 C26 21 28 25 28 33 Z"/><path class="b" d="M15 20 C15 16 17 14.5 20 14.5 C23 14.5 25 16 25 20"/><path class="l x" d="M20 4.5 V13 M16.5 8 H23.5"/>',
-};
 function pieceSvg(p) {
   return `<svg class="pc ${colorOf(p & 8)}" viewBox="0 0 40 40" aria-hidden="true">${SHAPES[p & 7]}<path class="b base" d="M10 33 Q20 31.5 30 33 L30 35.5 Q20 34.5 10 35.5 Z"/></svg>`;
 }
@@ -333,13 +326,13 @@ export default {
       <span class="aside">킹을 실제로 잡지는 않아. 피할 수 없게 되면 끝.</span></li>
     <li><b>말마다 움직이는 법이 다르다.</b> 킹: 사방 한 칸. 퀸: 가로·세로·대각선 멀리. 룩: 가로·세로 멀리. 비숍: 대각선 멀리.
       나이트: 두 칸 가고 옆으로 한 칸(다른 말을 넘어감). 폰: 앞으로 한 칸(처음엔 두 칸까지), 잡을 때만 대각선 앞으로.
-      <span class="aside">나이트 빼고는 다른 말을 넘어갈 수 없어.</span></li>
+      <span class="aside">나이트 빼고는 다른 말을 넘어갈 수 없어.</span>${MOVE_FIGS}</li>
     <li><b>내 킹이 공격받는 자리(체크)에 남거나 들어가는 수는 둘 수 없다.</b>
       <span class="aside">체크를 받으면 피하거나, 막거나, 공격하는 말을 잡아.</span></li>
     <li><b>캐슬링:</b> 킹과 룩이 둘 다 한 번도 안 움직였고 사이가 비었으면, 킹을 룩 쪽으로 두 칸 옮기고 룩을 킹 너머에 놓는다.
       체크 중이거나, 킹이 지나가는 칸이 공격받고 있으면 안 돼.
-      <span class="aside">판에서는 킹을 누르고 두 칸 옆을 누르면 돼.</span></li>
-    <li><b>앙파상:</b> 상대 폰이 두 칸 전진해서 내 폰 바로 옆에 서면, 바로 다음 수에 한 칸만 온 것처럼 대각선으로 잡을 수 있다.</li>
+      <span class="aside">판에서는 킹을 누르고 두 칸 옆을 누르면 돼.</span>${CASTLE_FIGS}</li>
+    <li><b>앙파상:</b> 상대 폰이 두 칸 전진해서 내 폰 바로 옆에 서면, 바로 다음 수에 한 칸만 온 것처럼 대각선으로 잡을 수 있다.${EP_FIG}</li>
     <li><b>승진:</b> 폰이 끝 줄에 닿으면 퀸·룩·비숍·나이트 중 하나로 바꾼다. 판 아래에서 고르면 돼.</li>
     <li><b>무승부:</b> 둘 차례인데 체크는 아니고 둘 수가 없을 때(스테일메이트), 같은 국면이 같은 차례로 세 번 나올 때,
       양쪽이 50수 동안 잡지도 폰을 움직이지도 않았을 때, 남은 말로는 누구도 메이트할 수 없을 때.</li>`,

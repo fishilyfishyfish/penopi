@@ -6,6 +6,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { FLIP_FIGS } from './figures.js';
 import { gridSvg } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -204,7 +205,7 @@ export default {
     <li><b>가운데 네 개(흑 둘, 백 둘)로 시작하고 흑이 먼저 둔다.</b></li>
     <li><b>빈칸에 돌을 놓아서, 그 돌과 내 다른 돌 사이에 상대 돌을 한 줄로 끼우면 끼인 돌이 전부 내 색으로 뒤집힌다.</b>
       가로, 세로, 대각선 다 되고, 한 번에 여러 줄을 뒤집어도 된다.
-      <span class="aside">빈칸이나 판 끝을 사이에 두면 안 끼인 거야.</span></li>
+      <span class="aside">빈칸이나 판 끝을 사이에 두면 안 끼인 거야.</span>${FLIP_FIGS}</li>
     <li><b>하나라도 뒤집을 수 있는 칸에만 둘 수 있다.</b> 판에서는 그런 칸에 빨간 점을 찍어 줄게.</li>
     <li><b>둘 곳이 없으면 차례를 넘긴다.</b> 둘 다 둘 곳이 없으면 끝.
       <span class="aside">판이 다 차기 전에 끝날 수도 있어.</span></li>

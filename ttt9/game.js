@@ -5,6 +5,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { SEND_FIG, FREE_FIG } from './figures.js';
 import { wobble } from '../shared/sketch.js';
 
 const THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -211,9 +212,9 @@ export default {
     <li><b>틱택토 판 아홉 개가 큰 틱택토 판 하나를 이루고 있다.</b> 작은 판에서 줄 셋을 먼저 만들면 그 작은 판은 내 거야.</li>
     <li><b>큰 판에서 내 작은 판 셋이 한 줄이 되면 이긴다.</b> 가로, 세로, 대각선 다 된다.</li>
     <li><b>내가 둔 자리가 상대가 둘 판을 정한다.</b> 내가 작은 판의 오른쪽 아래 칸에 두면, 상대는 큰 판의 오른쪽 아래 작은 판에서 둬야 해.
-      <span class="aside">판에서는 둘 수 있는 판을 노랗게 칠해 줄게.</span></li>
+      <span class="aside">판에서는 둘 수 있는 판을 노랗게 칠해 줄게.</span>${SEND_FIG}</li>
     <li><b>보내야 할 판이 이미 끝났거나 꽉 찼으면, 상대는 끝나지 않은 아무 판에서나 둘 수 있다.</b>
-      <span class="aside">그러니까 일부러 끝난 판으로 보내면 상대한테 선물을 주는 거야.</span></li>
+      <span class="aside">그러니까 일부러 끝난 판으로 보내면 상대한테 선물을 주는 거야.</span>${FREE_FIG}</li>
     <li><b>첫 수는 어디든 된다.</b> 선공이 먼저 둔다.</li>
     <li><b>줄 없이 모든 작은 판이 끝나면, 작은 판을 더 많이 가진 쪽이 이긴다.</b> 같으면 비긴다. 꽉 차서 아무도 못 가진 판은 세지 않아.</li>`,
     note: '틱택토를 겹쳐 놓은 놀이야. 만든 사람은 알려지지 않았어.',

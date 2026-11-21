@@ -129,6 +129,12 @@ button { font-family: inherit; }
 .sheet li { margin-bottom: 10px; }
 .sheet .aside { display: block; color: var(--muted); font-size: 17px; }
 .sheet svg { display: block; width: 100%; max-width: 360px; margin: 6px 0 2px; }
+.sheet .figs { display: flex; flex-wrap: wrap; gap: 8px 8px; margin: 8px 0 2px; }
+.sheet figure { margin: 0; flex: 0 1 146px; min-width: 120px; }
+.sheet figure svg.fig { margin: 0; width: 100%; max-width: 146px; }
+.sheet figure.wide { flex-basis: 230px; }
+.sheet figure.wide svg.fig { max-width: 230px; }
+.sheet figcaption { margin-top: 2px; font-size: 15px; line-height: 1.2; color: var(--muted); }
 .sheet .record { margin: 14px 0 0; padding-top: 10px; border-top: 2px dashed var(--ink); font-size: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .sheet .record .snark { flex-basis: 100%; order: -1; margin: 0; }
 .sheet .note { margin: 12px 0 0; font-size: 15px; color: var(--muted); }

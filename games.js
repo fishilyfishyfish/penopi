@@ -14,7 +14,7 @@ export const GAMES = [
   { id: 'dots', kind: 'take', name: '점과 상자', blurb: '선을 그어 상자를 닫으면 내 것. 닫으면 한 번 더.', pitch: '점과 상자는 공책에서 하던 그거야. 근데 나는 끝을 세면서 해.' },
   { id: 'janggi', kind: 'move', name: '장기', blurb: '궁을 외통으로 몰면 이긴다. 상차림은 골라서.', pitch: '장기는 자신 있어. 차 하나 떼 줄까? 농담이야.' },
   { id: 'yukgak', kind: 'line', name: '육각잇기', blurb: '육각형 칸에 돌을 놓아 내 변끼리 먼저 이으면 이긴다.', pitch: '육각잇기는 비기는 일이 없어. 누군가는 꼭 이겨. 아마 나.' },
-  { id: 'ttt9', kind: 'line', name: 'Ultimate Tic-Tac-Toe', blurb: '틱택토 판 아홉 개. 내가 둔 자리가 상대가 둘 판을 정해.', pitch: '틱택토 아홉 개를 한꺼번에 하는 거야. 내가 둔 자리가 네가 둘 판이 되니까, 잘 보고 둬.' },
+  { id: 'ttt9', kind: 'line', name: '얼티메이트 틱택토', blurb: '틱택토 판 아홉 개. 내가 둔 자리가 상대가 둘 판을 정해.', pitch: '틱택토 아홉 개를 한꺼번에 하는 거야. 내가 둔 자리가 네가 둘 판이 되니까, 잘 보고 둬.' },
   { id: 'shogi', kind: 'move', name: '쇼기', blurb: '잡은 말을 내 말로 다시 놓는 일본 장기. 페노피는 배우는 중.', pitch: '쇼기는 배우는 중이야. 잡은 말을 내 말로 쓰는 게 신기해.', practice: true },
   // 바둑 9줄: 페노피가 배우는 중(체스처럼 practice, 전적 안 적음; go/game.js에도 같은 표시)
   { id: 'go', kind: 'take', name: '바둑', blurb: '9줄 바둑. 집이 많으면 이긴다. 페노피는 배우는 중.', pitch: '바둑은 배우는 중이야. 9줄이면 해 볼 만해.', practice: true },

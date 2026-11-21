@@ -31,6 +31,7 @@ export const PLANS = {
   dots: [{ ms: 400, depth: 3, lapse: 0.1, ld: 2 }, { ms: 100, depth: 2, lapse: 0.3 }],
   janggi: [{ ms: 400, depth: 3, lapse: 0.1, ld: 2 }, { ms: 100, depth: 2, lapse: 0.3 }],
   shogi: [{ ms: 400, depth: 3, lapse: 0.1, ld: 2 }, { ms: 100, depth: 2, lapse: 0.3 }],
+  ttt9: [{ ms: 400, depth: 4, lapse: 0.1, ld: 2 }, { ms: 100, depth: 2, lapse: 0.3 }],
   go: [{ ms: 350, lapse: 0 }, { ms: 60, lapse: 0 }],
   yukgak: [{ ms: 350, lapse: 0 }, { ms: 60, lapse: 0 }],
 };

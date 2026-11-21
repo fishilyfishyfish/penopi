@@ -127,5 +127,17 @@ function naiveWin(board, s, color, rule) {
   const t = S.think({ time: 1000 });
   console.log(`a 3-stone position, 1 s: depth ${t.depth}, ${t.nodes} nodes, ${S.sqName(t.move)}`);
 }
+// ---------- 4. the rules-sheet figures (gomoku/figures.js) say only what the engine says ----------
+{
+  const { CASES, OFFSET } = await import(path.join(root, 'gomoku', 'figures.js'));
+  const E = GomokuEngine({ ttBits: 10 });
+  const at = ([r, c]) => (r + OFFSET) * 15 + (c + OFFSET);
+  for (const rule of ['ban33', 'renju']) for (const [name, k] of Object.entries(CASES)) {
+    E.setRule(rule); E.setPosition(k.blacks.map(at), k.whites.map(at), 1);
+    const got = E.forbidden(at(k.spot));
+    check(got === k.forbidden, `${rule}: figure "${name}" says forbidden ${k.forbidden}, the engine says ${got}`);
+  }
+  console.log('rules-sheet figures agree with the engine');
+}
 if (failures) { console.log(`${failures} failed`); process.exit(1); }
 console.log('ok');

@@ -11,6 +11,27 @@ export const FIVE_FIG = figs(
   board([1, 2, 3, 4, 5].map((c) => stone(true, 3, c)), '가로로 다섯 개를 이으면 이겨(세로·대각선도)'),
   board([0, 1, 2, 3, 4].map((i) => stone(true, i + 1, i + 1)), '대각선도 다섯 개면 이겨'),
 );
+// The double-three figures. Each case is a position (in the 7×7 window the figure shows) and the point black is thinking of;
+// tools/test-gomoku.mjs puts the same cases to the engine (the window sits in the middle of its 15×15 board: +4, +4), so the
+// pictures can't say anything the rules don't.
+export const OFFSET = 4;
+const CORE = [[3, 1], [3, 2], [1, 3], [2, 3]]; // two open twos that cross at (3, 3)
+export const CASES = {
+  real: { blacks: CORE, whites: [], spot: [3, 3], forbidden: true },
+  // one of the threes has a white stone at its end: it can only make a closed four, so it is not an open three
+  blocked: { blacks: CORE, whites: [[0, 3]], spot: [3, 3], forbidden: false },
+  // the same double three, but the point also makes exactly five: a five is never forbidden
+  five: { blacks: [[3, 0], [3, 1], [3, 2], [3, 4], [1, 3], [2, 3], [1, 1], [2, 2]], whites: [], spot: [3, 3], forbidden: false },
+  // the five case without the stone that makes the five: it is a real double three (so the five is what saves it)
+  fiveMissing: { blacks: [[3, 0], [3, 1], [3, 2], [1, 3], [2, 3], [1, 1], [2, 2]], whites: [], spot: [3, 3], forbidden: true },
+};
+const items = (k, extra = []) => [
+  ...CASES[k].blacks.map(([r, c]) => stone(true, r, c)), ...CASES[k].whites.map(([r, c]) => stone(false, r, c)),
+  ...extra,
+  CASES[k].forbidden ? { t: 'x', r: CASES[k].spot[0], c: CASES[k].spot[1] } : { t: 'dot', r: CASES[k].spot[0], c: CASES[k].spot[1] },
+];
 export const DOUBLE_THREE_FIG = figs(
-  board([stone(true, 3, 1), stone(true, 3, 2), stone(true, 1, 3), stone(true, 2, 3), { t: 'x', r: 3, c: 3 }], '여기 두면 열린 삼이 한꺼번에 둘(쌍삼): 흑은 못 둬'),
+  board(items('real'), '진짜 금수: 열린 삼이 한꺼번에 둘(쌍삼) → 못 둬(×)'),
+  board(items('blocked'), '가짜 금수 1: 한쪽 삼 끝이 흰 돌에 막혀 있으면 열린 삼이 아니야 → 둘 수 있어(점)'),
+  board(items('five', [{ t: 'seg', from: [3, 0], to: [3, 4], col: 'var(--pen)', w: 7 }]), '가짜 금수 2: 쌍삼 모양이 생겨도 다섯이 되는 수는 둘 수 있어(점)'),
 );

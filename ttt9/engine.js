@@ -1,4 +1,4 @@
-// Tic-tac-toe inside tic-tac-toe (틱택토 속 틱택토) engine, written for Penopi. Plain script, no build: loaded by
+// Ultimate Tic-Tac-Toe (tic-tac-toe inside tic-tac-toe) engine, written for Penopi. Plain script, no build: loaded by
 // worker.js (importScripts), by the page (rules) and by node (tools/test-ttt9.mjs).
 //
 // Rules: nine small tic-tac-toe boards in a 3×3. The first player starts anywhere. After that, the cell you

@@ -1,4 +1,4 @@
-// 틱택토 속 틱택토 lines, added to shared/lines.js. All new. Penopi thinks tic-tac-toe is a baby's game and finds out
+// Ultimate Tic-Tac-Toe lines, added to shared/lines.js. All new. Penopi thinks tic-tac-toe is a baby's game and finds out
 // this one isn't, but it reads the boards well.
 // When: ttt9/game.js. {a}/{b}: small boards I / Penopi won, {n}: my moves.
 export const LINES = {

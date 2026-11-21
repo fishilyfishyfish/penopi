@@ -1,4 +1,4 @@
-// 틱택토 속 틱택토. The engine (engine.js) was written for this site: alpha-beta in plain JS, loaded on the page for
+// Ultimate Tic-Tac-Toe. The engine (engine.js) was written for this site: alpha-beta in plain JS, loaded on the page for
 // the rules and in worker.js for thinking (the arrangement LOA 튀르크 used).
 // A move is one tap on a cell. The cell you play in (its place inside its small board) says which small board the
 // other side plays in next: the light-yellow one. If that board is already decided, the other side may play anywhere open.
@@ -197,7 +197,7 @@ function stop() { g++; dropped = -1; if (engine) engine.restart(); }
 
 export default {
   id: 'ttt9',
-  name: '틱택토 속 틱택토',
+  name: 'Ultimate Tic-Tac-Toe',
   sides: [
     { id: 1, first: true, html: '<b class="xo">X</b> · 선공' },
     { id: 2, first: false, html: '<b class="xo">O</b> · 후공' },
@@ -206,7 +206,7 @@ export default {
   chat: ['chatTtt9'],
   longGame: 40,
   rules: {
-    title: '틱택토 속 틱택토, 규칙도 몰라?',
+    title: 'Ultimate Tic-Tac-Toe, 규칙도 몰라?',
     html: `
     <li><b>틱택토 판 아홉 개가 큰 틱택토 판 하나를 이루고 있다.</b> 작은 판에서 줄 셋을 먼저 만들면 그 작은 판은 내 거야.</li>
     <li><b>큰 판에서 내 작은 판 셋이 한 줄이 되면 이긴다.</b> 가로, 세로, 대각선 다 된다.</li>
@@ -216,7 +216,7 @@ export default {
       <span class="aside">그러니까 일부러 끝난 판으로 보내면 상대한테 선물을 주는 거야.</span></li>
     <li><b>첫 수는 어디든 된다.</b> 선공이 먼저 둔다.</li>
     <li><b>줄 없이 모든 작은 판이 끝나면, 작은 판을 더 많이 가진 쪽이 이긴다.</b> 같으면 비긴다. 꽉 차서 아무도 못 가진 판은 세지 않아.</li>`,
-    note: '틱택토를 겹쳐 놓은 놀이로 여러 이름으로 불리고, 누가 처음 만들었는지는 확실하지 않아.',
+    note: '틱택토를 겹쳐 놓은 놀이야. 만든 사람은 알려지지 않았어.',
   },
   debug: () => ({ legal: state.legal, stm: state.stm, human, over: state.over, playing, plies: moves.length, cells: null }),
   mount(a) {
@@ -228,7 +228,7 @@ export default {
   start(side) {
     stop();
     human = side; moves = []; playing = true; wonKey = '';
-    boardEl.setAttribute('aria-label', '틱택토 속 틱택토 판, 나는 ' + mark(side));
+    boardEl.setAttribute('aria-label', 'Ultimate Tic-Tac-Toe 판, 나는 ' + mark(side));
     state = replay();
     render();
     next();

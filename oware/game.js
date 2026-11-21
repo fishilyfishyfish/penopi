@@ -6,6 +6,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { SOW_FIG, CAPTURE_FIG } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 const THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -238,9 +239,9 @@ export default {
     <li><b>씨앗을 25개 이상 가져가면 이긴다.</b> 처음엔 열두 칸에 넷씩, 모두 48개. 24개씩이면 비긴다.</li>
     <li><b>아래 줄 여섯 칸이 내 칸.</b> 내 칸 하나를 누르면 그 씨앗을 전부 집어서, 다음 칸부터 하나씩 뿌린다.
       방향은 시계 반대: 내 줄은 오른쪽으로, 끝에서 위로 올라가 상대 줄은 왼쪽으로.
-      <span class="aside">씨앗이 12개 이상이면 한 바퀴를 돈다. 그때 집어 든 칸은 건너뛴다.</span></li>
+      <span class="aside">씨앗이 12개 이상이면 한 바퀴를 돈다. 그때 집어 든 칸은 건너뛴다.</span>${SOW_FIG}</li>
     <li><b>마지막 씨앗이 상대 칸에 떨어져서 그 칸이 2개나 3개가 되면 그걸 가져간다.</b>
-      바로 앞 칸들도 상대 칸이고 2개나 3개면 줄줄이 같이 가져간다. 내 칸에서는 아무리 2, 3이 돼도 못 가져가.</li>
+      바로 앞 칸들도 상대 칸이고 2개나 3개면 줄줄이 같이 가져간다. 내 칸에서는 아무리 2, 3이 돼도 못 가져가.${CAPTURE_FIG}</li>
     <li><b>상대 씨앗을 한 번에 몽땅 가져가는 수는 둘 수는 있지만, 하나도 못 가져간다.</b>
       <span class="aside">씨는 남겨 줘야 게임이 계속되니까.</span></li>
     <li><b>상대 칸이 다 비었으면 씨앗을 넘겨주는 수를 둬야 한다.</b> 넘겨줄 수가 없으면 거기서 끝나고, 내 줄에 남은 씨앗은 내가 갖는다.</li>

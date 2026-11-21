@@ -5,6 +5,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { BOX_FIGS } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 const THINK_MS = 2500, CLAIM_MS = 700, HARD_LIMIT = THINK_MS + 4000;
@@ -198,7 +199,7 @@ export default {
     <li><b>상자를 더 많이 차지하면 이긴다.</b> 같으면 비긴다.</li>
     <li><b>번갈아 가며 이웃한 두 점 사이에 선을 하나씩 긋는다.</b> 가로나 세로로, 바로 옆 점끼리만.</li>
     <li><b>상자의 네 번째 변을 그은 사람이 그 상자를 갖고, 한 번 더 긋는다.</b> 한 번에 상자 두 개가 닫혀도 마찬가지.
-      <span class="aside">그래서 한 차례에 선을 여러 개 그을 수도 있어. 다 먹을 때까지.</span></li>
+      <span class="aside">그래서 한 차례에 선을 여러 개 그을 수도 있어. 다 먹을 때까지.</span>${BOX_FIGS}</li>
     <li><b>모든 선을 다 그으면 끝.</b> 판 크기는 시작 전에 고른다(상자 3×3, 4×4, 5×5).</li>
     <li><b>팁: 세 변이 그어진 상자는 상대에게 주는 선물이다.</b> 안전한 선이 다 떨어지면, 누가 먼저 긴 줄을 내주느냐의 싸움이 된다.
       <span class="aside">마지막 두 개를 일부러 남겨 주는 수도 있어. 내가 쓰는 걸 보면 알 거야.</span></li>

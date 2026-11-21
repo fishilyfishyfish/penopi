@@ -6,6 +6,7 @@
 import { LINES, VARIANT_LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { morrisFigs } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 
@@ -26,6 +27,7 @@ export function makeMorris(variant) {
   const R = globalThis.MorrisEngine({ ttBits: 8, variant });
   const { WIN, WIN_BOUND, mFrom, mTo, mRm, ADJ, MILLS, NAMES } = R;
   const V = VARIANTS[variant], XY = V.xy, G = V.grid, NP = R.NP;
+  const FIGS = morrisFigs({ XY, ADJ, MILLS, NP, grid: G });
   const colorOf = (c) => (c === 1 ? 'w' : 'b');
   const sideName = (c) => (c === 1 ? '백' : '흑');
 
@@ -237,7 +239,7 @@ export function makeMorris(variant) {
       <li><b>상대 말을 두 개만 남기거나, 상대가 움직일 수 없게 만들면 이긴다.</b></li>
       <li><b>각자 말 ${V.count}. 백부터 한 번에 하나씩 빈 점에 놓는다.</b> 다 놓으면 그때부터 옮긴다.</li>
       <li><b>옮길 때는 줄을 따라 바로 옆 빈 점으로 한 칸.</b>
-        <span class="aside">점과 점 사이에 선이 있어야 이웃이야.</span></li>
+        <span class="aside">점과 점 사이에 선이 있어야 이웃이야.</span>${FIGS}</li>
       <li><b>내 말 셋을 한 줄(가로나 세로의 세 점)로 세우면(밀), 상대 말 하나를 골라 판에서 뺀다.</b>
         ${V.millNote}이미 한 줄을 이룬 상대 말은 못 빼. 상대 말이 전부 줄에 들어가 있으면 그때는 아무거나.
         <span class="aside">놓을 때든 옮길 때든 줄이 서면 다 쳐. 줄을 풀었다가 다시 세워도 또 쳐.</span></li>

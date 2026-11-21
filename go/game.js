@@ -6,6 +6,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { BREATH_FIGS } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 const THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -189,7 +190,7 @@ export default {
     title: '바둑, 규칙도 몰라?',
     html: `
     <li><b>9줄 판. 흑부터 번갈아 선이 만나는 점에 돌을 하나씩 놓는다.</b> 놓은 돌은 움직이지 않는다.</li>
-    <li><b>돌이나 이어진 돌 덩어리의 숨 쉴 곳(바로 옆 빈 점)을 상대가 다 막으면 그 돌들을 들어낸다.</b></li>
+    <li><b>돌이나 이어진 돌 덩어리의 숨 쉴 곳(바로 옆 빈 점)을 상대가 다 막으면 그 돌들을 들어낸다.</b>${BREATH_FIGS}</li>
     <li><b>놓자마자 내 돌이 숨 쉴 곳이 없어지는 자리는 못 둔다.</b> 그 수로 상대 돌을 잡는다면 괜찮다.</li>
     <li><b>패: 판 전체가 예전과 똑같아지는 수는 못 둔다.</b>
       <span class="aside">돌 하나를 서로 계속 따먹는 걸 막는 규칙이야. 한 번 딴 데 두고 와.</span></li>

@@ -6,6 +6,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { HEX_FIG } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 const THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -195,7 +196,7 @@ export default {
     html: `
     <li><b>육각형 칸에 번갈아 내 돌을 하나씩 놓는다.</b> 흑이 먼저. 놓은 돌은 움직이지 않는다.</li>
     <li><b>흑은 위아래 변(굵은 선)을, 백은 왼쪽 오른쪽 변(두 줄 선)을 내 돌로 끊김 없이 이으면 이긴다.</b>
-      <span class="aside">붙어 있는 육각형끼리만 이어진 걸로 쳐. 판이 다 차기 전에 누군가는 꼭 이어서, 비기는 일이 없어.</span></li>
+      <span class="aside">붙어 있는 육각형끼리만 이어진 걸로 쳐. 판이 다 차기 전에 누군가는 꼭 이어서, 비기는 일이 없어.</span>${HEX_FIG}</li>
     <li><b>바꾸기:</b> 첫 수 다음에 백은 흑의 첫 돌을 자기 것으로 가질 수 있다(판 아래 "바꾸기"). 그 돌은 대각선으로 뒤집은 자리의 백 돌이 되고, 흑이 다시 둔다.
       <span class="aside">먼저 두는 쪽이 너무 유리해서 있는 규칙이야. 그래서 흑은 첫 수를 너무 좋은 데 두면 뺏겨.</span></li>
     <li><b>칸을 한 번 누르면 흐린 돌, 한 번 더 누르면 둔다.</b> 판 크기는 대국 전에 골라.</li>`,

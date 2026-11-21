@@ -6,6 +6,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { FIVE_FIG, DOUBLE_THREE_FIG } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 const N = 15, THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -185,11 +186,11 @@ export default {
     title: '오목, 규칙도 몰라?',
     html: `
     <li><b>가로, 세로, 대각선 중 한 줄로 내 돌 다섯 개를 먼저 이으면 이긴다.</b> 흑이 먼저 두고, 번갈아 빈 점에 하나씩 놓는다.
-      <span class="aside">판에서는 한 번 누르면 흐린 돌이 놓이고, 같은 곳을 한 번 더 누르면 둔다.</span></li>
+      <span class="aside">판에서는 한 번 누르면 흐린 돌이 놓이고, 같은 곳을 한 번 더 누르면 둔다.</span>${FIVE_FIG}</li>
     <li><b>규칙은 대국 전에 고른다.</b>
       <span class="aside">흑이 먼저 둬서 유리하니까, 규칙이 흑을 얼마나 묶느냐가 다르다.</span></li>
     <li><b>자유:</b> 다섯 개 이상이면 누구든 이긴다. 금지된 자리 없음.</li>
-    <li><b>흑 쌍삼 금지:</b> 흑은 열린 삼(한 수 더 두면 양쪽이 열린 사가 되는 셋)을 한 번에 두 개 만들 수 없다. 여섯 개 이상도 이긴 걸로 친다.</li>
+    <li><b>흑 쌍삼 금지:</b> 흑은 열린 삼(한 수 더 두면 양쪽이 열린 사가 되는 셋)을 한 번에 두 개 만들 수 없다. 여섯 개 이상도 이긴 걸로 친다.${DOUBLE_THREE_FIG}</li>
     <li><b>렌주:</b> 흑은 쌍삼, 쌍사(사를 한 번에 두 개), 장목(여섯 개 이상)을 둘 수 없고, 정확히 다섯 개로만 이긴다. 백은 다섯 개 이상이면 이긴다.
       다섯을 만드는 수는 금지된 모양이 같이 생겨도 둘 수 있다.
       <span class="aside">흑이 금지된 자리는 판에 빨간 ×로 표시해 줄게. 착하지?</span></li>

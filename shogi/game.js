@@ -7,6 +7,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { MOVE_FIGS, PROMO_FIGS } from './figures.js';
 import { hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 import { GLYPHS } from '../shared/glyphs.js';
@@ -316,10 +317,10 @@ export default {
       <span class="aside">왕이 공격받는 걸 장군이라고 해. 장군을 받으면 꼭 풀어야 해.</span></li>
     <li><b>말마다 가는 길이 달라.</b> 왕: 사방 한 칸. 비: 가로·세로로 멀리. 각: 대각선으로 멀리. 금: 앞·옆·뒤로 한 칸(뒤 대각선은 못 감).
       은: 앞 세 방향과 뒤 대각선 두 칸. 계: 앞으로 두 칸 가서 옆으로 한 칸(다른 말을 넘어, 앞으로만). 향: 앞으로 멀리. 보: 앞으로 한 칸.
-      <span class="aside">말은 뒤로 돌아가지 못하는 게 많아. 보·향·계는 앞으로만 가.</span></li>
+      <span class="aside">말은 뒤로 돌아가지 못하는 게 많아. 보·향·계는 앞으로만 가.</span>${MOVE_FIGS}</li>
     <li><b>승급:</b> 상대 진영(앞쪽 세 줄)에 들어가거나, 거기서 나오거나, 거기서 움직이면 보·향·계·은·각·비를 뒤집어 승급시킬 수 있다.
       보·향·계·은은 금처럼 움직이고, 각은 마(각 + 사방 한 칸), 비는 룡(비 + 대각선 한 칸)이 돼. 승급한 말은 붉은 글씨야.
-      갈 곳이 없어지는 승급 전 말은 꼭 승급해야 해. 잡히면 승급이 풀려.</li>
+      갈 곳이 없어지는 승급 전 말은 꼭 승급해야 해. 잡히면 승급이 풀려.${PROMO_FIGS}</li>
     <li><b>잡은 말은 내 말:</b> 잡은 말은 내 손에 들어와(판 아래 줄). 내 차례에 한 번 두는 대신 아무 빈 점에나 놓을 수 있어.
       말을 누르고 놓을 점을 누르면 돼. 윗줄은 페노피가 가진 말이야.</li>
     <li><b>놓을 때 안 되는 것:</b> 같은 줄에 내 보가 이미 있으면 보를 못 놓아(이보, 승급한 보는 상관없어). 갈 곳 없는 자리(보·향은 맨 끝줄, 계는 끝 두 줄)에는 못 놓아.

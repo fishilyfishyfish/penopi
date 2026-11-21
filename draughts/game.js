@@ -6,6 +6,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { MOVE_FIGS, KING_FIGS } from './figures.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -252,12 +253,12 @@ export default {
     <li><b>상대가 둘 수 없게 만들면 이긴다.</b> 말을 다 잡거나, 남은 말이 전부 꼼짝 못 하게 막으면 돼.</li>
     <li><b>10×10 판의 빗금 친 칸만 쓴다. 각자 말 20개, 백이 먼저.</b></li>
     <li><b>말은 대각선 앞으로 한 칸씩 간다.</b> 잡을 때만 뒤로도 갈 수 있어: 바로 옆 대각선의 상대 말을 뛰어넘어 그 너머 빈칸에 내려.
-      <span class="aside">한 번 넘은 뒤에도 또 넘을 수 있으면 계속 넘어. 한 수에 여러 개 잡는 거야.</span></li>
+      <span class="aside">한 번 넘은 뒤에도 또 넘을 수 있으면 계속 넘어. 한 수에 여러 개 잡는 거야.</span>${MOVE_FIGS}</li>
     <li><b>잡을 수 있으면 반드시 잡아야 한다. 여러 방법이 있으면 가장 많이 잡는 방법으로.</b>
       <span class="aside">그래서 일부러 하나 내주고 여러 개 쓸어 가는 수가 나와. 내가 좋아하는 거.</span></li>
     <li><b>잡힌 말은 그 수가 끝난 뒤에 치운다.</b> 그때까지는 판에 남아 있어서, 같은 말을 두 번 넘을 수도, 그 말을 지나갈 수도 없어.</li>
     <li><b>상대 쪽 끝 줄에서 수를 마치면 킹이 된다.</b> 잡는 도중에 끝 줄을 지나가기만 하면 안 돼.
-      <span class="aside">킹은 대각선으로 멀리 날아다녀. 잡을 때도 멀리 있는 말을 넘어 그 너머 아무 빈칸에나 내려.</span></li>
+      <span class="aside">킹은 대각선으로 멀리 날아다녀. 잡을 때도 멀리 있는 말을 넘어 그 너머 아무 빈칸에나 내려.</span>${KING_FIGS}</li>
     <li><b>무승부:</b> 같은 국면이 같은 차례로 세 번 나올 때, 양쪽이 잡지 않고 킹만 25수씩 움직였을 때,
       킹 하나만 남은 쪽을 상대가 말 셋(킹 포함)으로 16수, 둘 이하로 5수 안에 못 이길 때.</li>
     <li><b>판에서는</b> 말을 누르고 갈 칸(빨간 점)을 누르면 돼. 잡아야 할 때는 잡을 수 있는 말에 빨간 점선이 둘려 있어.

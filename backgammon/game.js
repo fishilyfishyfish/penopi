@@ -6,6 +6,7 @@
 // Input is that site's "바로 이동": tap a checker and it moves by the left die; tap the dice to swap them.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
+import { ROUTE_FIG } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 const HUMAN = 0, AI = 1, BAR = 25;
@@ -476,7 +477,7 @@ export default {
   rules: {
     html: `
     <li><b>자기 말 15개를 먼저 판 밖으로 다 빼는 쪽이 이긴다.</b> 네 말은 위 오른쪽 끝에서 출발해서, 위쪽을 따라 왼쪽으로, 아래쪽을 따라 오른쪽으로 돌아 아래 오른쪽 네 집(1–6)으로 들어와.
-      <span class="aside">내 말은 반대로 돌아서 위 오른쪽 내 집으로 가. 서로 마주 보고 지나가는 거야.</span></li>
+      <span class="aside">내 말은 반대로 돌아서 위 오른쪽 내 집으로 가. 서로 마주 보고 지나가는 거야.</span>${ROUTE_FIG}</li>
     <li><b>주사위 둘을 굴려 나온 두 숫자만큼 말을 옮긴다.</b> 한 말로 둘 다 써도 되고 두 말에 나눠도 돼. 같은 숫자 둘이면 네 번 옮겨.
       <span class="aside">쓸 수 있는 숫자는 다 써야 해. 하나만 쓸 수 있으면 큰 걸 써야 하고.</span></li>
     <li><b>상대 말이 둘 이상 있는 칸에는 못 간다. 하나만 있으면 맞혀서 바(가운데 기둥)로 보낸다.</b>

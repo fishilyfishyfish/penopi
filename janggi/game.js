@@ -8,6 +8,7 @@ import { BOOK } from './book.js';
 import { GLYPHS } from '../shared/glyphs.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
+import { MOVE_FIGS } from './figures.js';
 import { hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -298,7 +299,7 @@ export default {
     <li><b>차:</b> 가로·세로로 멀리. 궁성 안에서는 대각선 선을 따라서도. <b>포:</b> 말 하나를 꼭 뛰어넘어서 간다(잡을 때도).
       포는 포를 넘을 수도, 잡을 수도 없다.</li>
     <li><b>마:</b> 한 칸 곧게 가고 대각선으로 한 칸. <b>상:</b> 한 칸 곧게 가고 대각선으로 두 칸.
-      <span class="aside">가는 길 중간에 말이 있으면 못 가. 상차림(마·상 자리)은 대국 전에 골라.</span></li>
+      <span class="aside">가는 길 중간에 말이 있으면 못 가. 상차림(마·상 자리)은 대국 전에 골라.</span>${MOVE_FIGS}</li>
     <li><b>졸·병:</b> 앞이나 옆으로 한 칸. 상대 궁성 안에서는 앞쪽 대각선 선을 따라서도. 뒤로는 못 간다.</li>
     <li><b>한수 쉼:</b> 장군을 받은 게 아니면 판 아래 단추로 한 번 쉴 수 있다.</li>
     <li><b>빅장:</b> 궁끼리 사이에 아무것도 없이 마주 보면, 받은 쪽은 그걸 푸는 수만 둘 수 있다. 안 풀고 쉬면 점수로 끝.</li>

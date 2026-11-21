@@ -132,11 +132,16 @@ function naiveWin(board, s, color, rule) {
   const { CASES, OFFSET } = await import(path.join(root, 'gomoku', 'figures.js'));
   const E = GomokuEngine({ ttBits: 10 });
   const at = ([r, c]) => (r + OFFSET) * 15 + (c + OFFSET);
+  const want = (k, rule) => (typeof k.forbidden === 'object' ? k.forbidden[rule] : k.forbidden);
   for (const rule of ['ban33', 'renju']) for (const [name, k] of Object.entries(CASES)) {
     E.setRule(rule); E.setPosition(k.blacks.map(at), k.whites.map(at), 1);
     const got = E.forbidden(at(k.spot));
-    check(got === k.forbidden, `${rule}: figure "${name}" says forbidden ${k.forbidden}, the engine says ${got}`);
+    check(got === want(k, rule), `${rule}: figure "${name}" says forbidden ${want(k, rule)}, the engine says ${got}`);
   }
+  // the chained case: with the stone down, the point that would make the diagonal a four is forbidden (two fours), which is why that diagonal is no three
+  const c = CASES.chained;
+  E.setRule('renju'); E.setPosition(c.blacks.concat([c.spot]).map(at), c.whites.map(at), 1);
+  check(E.forbidden(at(c.key)), 'chained: the point that would turn the diagonal into a four is forbidden for black');
   console.log('rules-sheet figures agree with the engine');
 }
 if (failures) { console.log(`${failures} failed`); process.exit(1); }

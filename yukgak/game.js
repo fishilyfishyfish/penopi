@@ -5,7 +5,7 @@
 // 백 may take 흑's first stone ("바꾸기" under the board), which turns into a 백 stone at the mirrored cell.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan } from '../shared/ease.js';
+import { easePlan, easeSlip } from '../shared/ease.js';
 import { HEX_FIG } from './figures.js';
 import { reduced } from '../shared/character.js';
 
@@ -65,6 +65,7 @@ async function engineMove() {
   if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500));
   if (my !== g) return;
   let m = info.move;
+  if (m !== SWAP) { const cand = []; state.b.forEach((x, i) => { if (!x) cand.push(i); }); const sl = easeSlip('yukgak', cand); if (sl !== undefined) m = sl; }
   if (m === SWAP ? !state.canSwap : m < 0 || state.b[m]) m = state.b.findIndex((x) => !x);
   commit(m, info);
 }

@@ -5,7 +5,7 @@
 // the seeds are then sown one by one and the captured pits are emptied into the store.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan } from '../shared/ease.js';
+import { easePlan, easeSlip } from '../shared/ease.js';
 import { SOW_FIG, CAPTURE_FIG } from './figures.js';
 import { reduced } from '../shared/character.js';
 
@@ -58,7 +58,7 @@ async function engineMove() {
   if (my !== g || !info) return;
   if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500));
   if (my !== g) return;
-  const m = state.legal.includes(info.move) ? info.move : state.legal[0];
+  const m = easeSlip('oware', state.legal) ?? (state.legal.includes(info.move) ? info.move : state.legal[0]);
   commit(m, info);
 }
 

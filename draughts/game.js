@@ -5,7 +5,7 @@
 // squares it lands on along the way.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan } from '../shared/ease.js';
+import { easePlan, easeSlip } from '../shared/ease.js';
 import { MOVE_FIGS, KING_FIGS } from './figures.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
@@ -58,7 +58,7 @@ async function engineMove() {
   if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500));
   if (my !== g) return;
   const same = (a, b) => a.from === b.from && a.to === b.to && a.caps.length === b.caps.length && a.caps.every((c, i) => c === b.caps[i]);
-  const m = (info.move && state.legal.find((x) => same(x, info.move))) || state.legal[0];
+  const m = easeSlip('draughts', state.legal) || (info.move && state.legal.find((x) => same(x, info.move))) || state.legal[0];
   commit(m, info);
 }
 

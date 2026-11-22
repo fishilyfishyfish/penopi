@@ -5,7 +5,7 @@
 // the points of a 15×15 board). Forbidden points for Black are crossed out when I'm Black.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan } from '../shared/ease.js';
+import { easePlan, easeSlip } from '../shared/ease.js';
 import { FIVE_FIG, DOUBLE_THREE_FIG } from './figures.js';
 import { reduced } from '../shared/character.js';
 
@@ -57,6 +57,7 @@ async function engineMove() {
   if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500));
   if (my !== g) return;
   let m = info.move;
+  { R.setRule(rule); R.setStart(); for (const x of moves) R.play(x); const sl = easeSlip('gomoku', R.legalMoves().filter((x) => !state.forb.has(x) && !(R.stm === 1 && rule !== 'free' && R.forbidden(x)))); if (sl !== undefined) m = sl; }
   if (m < 0 || state.b[m] || state.forb.has(m)) { R.setRule(rule); R.setStart(); for (const x of moves) R.play(x); m = R.legalMoves()[0]; }
   commit(m, info);
 }

@@ -4,7 +4,7 @@
 // other side plays in next: the light-yellow one. If that board is already decided, the other side may play anywhere open.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan } from '../shared/ease.js';
+import { easePlan, easeSlip } from '../shared/ease.js';
 import { SEND_FIG, FREE_FIG } from './figures.js';
 import { wobble } from '../shared/sketch.js';
 
@@ -59,7 +59,7 @@ async function engineMove() {
   if (my !== g || !info) return;
   if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500));
   if (my !== g) return;
-  const m = state.legal.includes(info.move) ? info.move : state.legal[0];
+  const m = easeSlip('ttt9', state.legal) ?? (state.legal.includes(info.move) ? info.move : state.legal[0]);
   commit(m, info);
 }
 

@@ -6,7 +6,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
-import { FIVE_FIG, DOUBLE_THREE_FIG } from './figures.js';
+import { FIVE_FIG, DOUBLE_THREE_FIG, RENJU_FIG } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 const N = 15, THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -194,7 +194,7 @@ export default {
       <span class="aside">진짜 금수는 ×, 금수 같아 보여도 둘 수 있는 가짜 금수는 점으로 보여 줄게.</span>${DOUBLE_THREE_FIG}</li>
     <li><b>렌주:</b> 흑은 쌍삼, 쌍사(사를 한 번에 두 개), 장목(여섯 개 이상)을 둘 수 없고, 정확히 다섯 개로만 이긴다. 백은 다섯 개 이상이면 이긴다.
       다섯을 만드는 수는 금지된 모양이 같이 생겨도 둘 수 있다.
-      <span class="aside">흑이 금지된 자리는 판에 빨간 ×로 표시해 줄게. 착하지?</span></li>
+      <span class="aside">흑이 금지된 자리는 판에 빨간 ×로 표시해 줄게. 착하지?</span>${RENJU_FIG}</li>
     <li><b>판이 꽉 찰 때까지 아무도 못 이으면 무승부.</b></li>`,
   },
   debug: () => ({ legal: state.b.map((v, s) => (!v && !state.forb.has(s) ? s : -1)).filter((s) => s >= 0), stm: state.stm, human, over: !!state.result,

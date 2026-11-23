@@ -31,3 +31,9 @@ export const EP_FIG = figs(diagram({
   label: '앙파상',
   items: [piece(1, true, 2, 1), piece(1, false, 2, 2), { t: 'arrow', from: [0, 2], to: [2, 2], col: 'var(--ink)', trim: 26 }, { t: 'dot', r: 1, c: 2 }, { t: 'arrow', from: [2, 1], to: [1, 2], trim: 26 }],
 }));
+
+// 체크 and checkmate: king in check from a rook; king in the corner with nowhere to go
+export const CHECK_FIGS = figs(
+  board7([piece(4, true, 3, 0), piece(6, false, 3, 5), piece(6, true, 6, 0), { t: 'arrow', from: [3, 0], to: [3, 5], trim: 30 }], '체크: 킹이 공격받는 상태. 꼭 피하거나 막거나 잡아야 해'),
+  board7([piece(5, true, 1, 5), piece(6, true, 2, 4), piece(6, false, 0, 6), { t: 'x', r: 0, c: 5 }, { t: 'x', r: 1, c: 6 }], '체크메이트: 킹이 갈 곳(×)이 없고 퀸은 킹이 지켜서 못 잡아 → 끝'),
+);

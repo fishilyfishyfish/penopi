@@ -31,3 +31,9 @@ export const PROMO_FIGS = figs(
   board5([tile(13, 2, 2), ...dots([...rays(2, 2, DIAG), ...one(2, 2, ORTHO)])], '마(승급한 각): 각 + 사방 한 칸'),
   board5([tile(14, 2, 2), ...dots([...rays(2, 2, ORTHO), ...one(2, 2, DIAG)])], '룡(승급한 비): 비 + 대각선 한 칸'),
 );
+
+// 이보: a second pawn on a file that already has one of mine (an unpromoted pawn) cannot be dropped; a promoted one doesn't count
+export const NIFU_FIGS = figs(
+  board5([tile(1, 3, 2), { t: 'x', r: 0, c: 2 }, { t: 'x', r: 1, c: 2 }, { t: 'x', r: 2, c: 2 }, { t: 'x', r: 4, c: 2 }, ...dots([[0, 0], [2, 4]])], '이보: 내 보(보)가 있는 줄(×)에는 보를 못 놓아. 다른 줄(점)은 괜찮아'),
+  board5([tile(9, 3, 2), ...dots([[0, 2], [1, 2], [2, 2], [4, 2]])], '승급한 보(토)만 있는 줄에는 보를 놓을 수 있어'),
+);

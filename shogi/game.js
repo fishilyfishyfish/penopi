@@ -7,7 +7,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
-import { MOVE_FIGS, PROMO_FIGS } from './figures.js';
+import { MOVE_FIGS, PROMO_FIGS, NIFU_FIGS } from './figures.js';
 import { hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 import { GLYPHS } from '../shared/glyphs.js';
@@ -324,7 +324,7 @@ export default {
     <li><b>잡은 말은 내 말:</b> 잡은 말은 내 손에 들어와(판 아래 줄). 내 차례에 한 번 두는 대신 아무 빈 점에나 놓을 수 있어.
       말을 누르고 놓을 점을 누르면 돼. 윗줄은 페노피가 가진 말이야.</li>
     <li><b>놓을 때 안 되는 것:</b> 같은 줄에 내 보가 이미 있으면 보를 못 놓아(이보, 승급한 보는 상관없어). 갈 곳 없는 자리(보·향은 맨 끝줄, 계는 끝 두 줄)에는 못 놓아.
-      보를 놓아서 바로 외통을 만드는 것도 반칙이야(다른 말로는 괜찮아).</li>
+      보를 놓아서 바로 외통을 만드는 것도 반칙이야(다른 말로는 괜찮아).${NIFU_FIGS}</li>
     <li><b>무승부:</b> 같은 국면이 네 번 나오면 비긴다. 다만 매번 장군으로 반복한 쪽은 반칙으로 진다.
       <span class="aside">너무 오래 끌면(600수) 비긴 걸로 쳐.</span></li>
     <li><b>입옥 선언:</b> 내 왕이 상대 진영에 들어가 있고 장군을 받지 않을 때, 상대 진영 안에 내 말(왕 빼고)이 열 개 이상이고 점수가 선수 28점·후수 27점 이상이면 선언해서 이긴다.

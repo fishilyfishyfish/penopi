@@ -8,7 +8,7 @@ import { BOOK } from './book.js';
 import { GLYPHS } from '../shared/glyphs.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
-import { MOVE_FIGS } from './figures.js';
+import { MOVE_FIGS, BIG_FIG } from './figures.js';
 import { hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -302,7 +302,7 @@ export default {
       <span class="aside">가는 길 중간에 말이 있으면 못 가. 상차림(마·상 자리)은 대국 전에 골라.</span>${MOVE_FIGS}</li>
     <li><b>졸·병:</b> 앞이나 옆으로 한 칸. 상대 궁성 안에서는 앞쪽 대각선 선을 따라서도. 뒤로는 못 간다.</li>
     <li><b>한수 쉼:</b> 장군을 받은 게 아니면 판 아래 단추로 한 번 쉴 수 있다.</li>
-    <li><b>빅장:</b> 궁끼리 사이에 아무것도 없이 마주 보면, 받은 쪽은 그걸 푸는 수만 둘 수 있다. 안 풀고 쉬면 점수로 끝.</li>
+    <li><b>빅장:</b> 궁끼리 사이에 아무것도 없이 마주 보면, 받은 쪽은 그걸 푸는 수만 둘 수 있다. 안 풀고 쉬면 점수로 끝.${BIG_FIG}</li>
     <li><b>점수로 끝나는 때:</b> 빅장을 받고 쉴 때, 둘 다 연달아 쉴 때, 같은 국면이 세 번 나올 때, 200수가 됐을 때. 차 13, 포 7, 마 5, 상 3, 사 3, 졸 2점이고 한은 1.5점을 더 받는다(덤). 그래서 비기지 않아.</li>`,
   },
   debug: () => ({ legal: state.legal.filter((m) => m !== PASS), pass: state.legal.includes(PASS), stm: state.side, human, over: !!state.result, playing,

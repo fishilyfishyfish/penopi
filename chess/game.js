@@ -8,7 +8,7 @@ import { BOOK, parseLine } from './book.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
 import { SHAPES } from './pieces.js';
-import { MOVE_FIGS, CASTLE_FIGS, EP_FIG } from './figures.js';
+import { MOVE_FIGS, CASTLE_FIGS, EP_FIG, CHECK_FIGS } from './figures.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -328,7 +328,7 @@ export default {
       나이트: 두 칸 가고 옆으로 한 칸(다른 말을 넘어감). 폰: 앞으로 한 칸(처음엔 두 칸까지), 잡을 때만 대각선 앞으로.
       <span class="aside">나이트 빼고는 다른 말을 넘어갈 수 없어.</span>${MOVE_FIGS}</li>
     <li><b>내 킹이 공격받는 자리(체크)에 남거나 들어가는 수는 둘 수 없다.</b>
-      <span class="aside">체크를 받으면 피하거나, 막거나, 공격하는 말을 잡아.</span></li>
+      <span class="aside">체크를 받으면 피하거나, 막거나, 공격하는 말을 잡아.</span>${CHECK_FIGS}</li>
     <li><b>캐슬링:</b> 킹과 룩이 둘 다 한 번도 안 움직였고 사이가 비었으면, 킹을 룩 쪽으로 두 칸 옮기고 룩을 킹 너머에 놓는다.
       체크 중이거나, 킹이 지나가는 칸이 공격받고 있으면 안 돼.
       <span class="aside">판에서는 킹을 누르고 두 칸 옆을 누르면 돼.</span>${CASTLE_FIGS}</li>

@@ -27,6 +27,9 @@ export const CASES = {
   // But the point that would make that diagonal a four (g9) is forbidden for black (it would make two fours with row 9), so the diagonal is no
   // three and h10 is allowed under renju; a rule that only counts threes (ban33) forbids it. Window: columns f..l, rows 12..6.
   chained: { blacks: [[4, 0], [3, 3], [3, 4], [3, 5], [2, 3], [2, 4], [1, 3]], whites: [[3, 6]], spot: [2, 2], forbidden: { ban33: true, renju: false }, key: [3, 1] },
+  // renju only: two fours at once (row and column both become four), and six in a row
+  doubleFour: { blacks: [[3, 0], [3, 1], [3, 2], [0, 3], [1, 3], [2, 3]], whites: [], spot: [3, 3], forbidden: { ban33: false, renju: true } },
+  overline: { blacks: [[3, 0], [3, 1], [3, 2], [3, 4], [3, 5]], whites: [], spot: [3, 3], forbidden: { ban33: false, renju: true } },
   fiveMissing: { blacks: [[3, 0], [3, 1], [3, 2], [1, 3], [2, 3], [1, 1], [2, 2]], whites: [], spot: [3, 3], forbidden: true },
 };
 const wants = (k, rule) => (typeof CASES[k].forbidden === 'object' ? CASES[k].forbidden[rule] : CASES[k].forbidden);
@@ -40,4 +43,8 @@ export const DOUBLE_THREE_FIG = figs(
   board(items('blocked'), '가짜 금수 1: 한쪽 삼 끝이 흰 돌에 막혀 있으면 열린 삼이 아니야 → 둘 수 있어(점)'),
   board(items('five', [{ t: 'seg', from: [3, 0], to: [3, 4], col: 'var(--pen)', w: 7 }]), '가짜 금수 2: 쌍삼 모양이 생겨도 다섯이 되는 수는 둘 수 있어(점)'),
   board(items('chained', [{ t: 'x', r: 3, c: 1 }]), '가짜 금수 3(렌주): 점에 두면 대각선도 삼처럼 보여도, 그걸 넷으로 키울 자리(×)가 금수(쌍사)라서 삼이 아니야 → 삼은 가로 하나뿐, 둘 수 있어'),
+);
+export const RENJU_FIG = figs(
+  board(items('doubleFour'), '쌍사: 한 점에서 사(넷)가 한꺼번에 둘 생기면 못 둬(×)'),
+  board(items('overline'), '장목: 여섯 개 이상이 되면 흑은 못 둬(×). 정확히 다섯만 이겨'),
 );

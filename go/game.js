@@ -6,7 +6,7 @@
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
 import { easePlan } from '../shared/ease.js';
-import { BREATH_FIGS } from './figures.js';
+import { BREATH_FIGS, KO_FIGS } from './figures.js';
 import { reduced } from '../shared/character.js';
 
 const THINK_MS = 2500, HARD_LIMIT = THINK_MS + 4000;
@@ -193,7 +193,7 @@ export default {
     <li><b>돌이나 이어진 돌 덩어리의 숨 쉴 곳(바로 옆 빈 점)을 상대가 다 막으면 그 돌들을 들어낸다.</b>${BREATH_FIGS}</li>
     <li><b>놓자마자 내 돌이 숨 쉴 곳이 없어지는 자리는 못 둔다.</b> 그 수로 상대 돌을 잡는다면 괜찮다.</li>
     <li><b>패: 판 전체가 예전과 똑같아지는 수는 못 둔다.</b>
-      <span class="aside">돌 하나를 서로 계속 따먹는 걸 막는 규칙이야. 한 번 딴 데 두고 와.</span></li>
+      <span class="aside">돌 하나를 서로 계속 따먹는 걸 막는 규칙이야. 한 번 딴 데 두고 와.</span>${KO_FIGS}</li>
     <li><b>둘 다 연달아 쉬면(판 아래 "쉬기") 끝난다.</b> 살 수 없는 돌은 죽은 돌로 치고 들어낸다(X 표시).</li>
     <li><b>계가: 내 돌 수 + 내 돌로만 둘러싸인 빈 점 수. 백은 나중에 두니까 7.5집을 더 받는다(덤).</b> 많은 쪽이 이긴다. 반 집이 있어서 비기지 않는다.</li>
     <li><b>팁: 끝날 무렵 쉬기 전에, 아직 경계가 열린 곳이 없는지 봐.</b>

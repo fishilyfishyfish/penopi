@@ -25,3 +25,8 @@ export const MOVE_FIGS = figs(
   fig(5, 5, [tile(1, true, 3, 2), ...dots([[2, 2], [3, 1], [3, 3]])], '졸·병: 앞이나 옆으로 한 칸'),
   fig(5, 5, [tile(7, true, 2, 2), ...dots([[1, 1], [1, 2], [1, 3], [2, 1], [2, 3], [3, 1], [3, 2], [3, 3]])], '궁·사: 궁성 안에서 선을 따라 한 칸', { diag: PALACE }),
 );
+
+// 빅장: the two generals face each other down a file with nothing between (the figure is the full 10 ranks, 3 files)
+export const BIG_FIG = figs(
+  fig(10, 3, [tile(7, false, 0, 1), tile(7, true, 9, 1), { t: 'seg', from: [1, 1], to: [8, 1], col: 'var(--pen)', w: 7, dash: '14 12' }], '빅장: 궁이 마주 보면 받은 쪽은 풀어야 해', { diag: [[0, 0, 2, 2], [0, 2, 2, 0], [7, 0, 9, 2], [7, 2, 9, 0]], max: 90 }),
+);

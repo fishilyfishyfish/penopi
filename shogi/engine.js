@@ -349,12 +349,15 @@ function ShogiEngine(opts) {
     ksA: prm('enemy near king', new Array(30).fill(0)),
     esc: prm('empty next to king', new Array(9).fill(0)),
     tempo: prm('tempo', [10]),
+    mob: prm('slider mobility', [0, 0, 0, 0, 0]), // lance, bishop, rook, horse, dragon: squares reachable along the rays
+    kza: prm('king zone attacked', new Array(9).fill(0)), // empty squares next to the king that the enemy attacks, 0..8
   };
   const TUNED = [0,124,314,336,517,585,867,1021,0,540,557,571,576,1012,1216,0,129,358,374,568,647,957,1133,0,-1,0,-1,0,0,-1,-1,-1,0,-23,7,-22,-1,-2,7,2,16,1,-6,17,-5,3,7,11,4,7,2,2,2,1,3,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,-1,0,0,-18,-1,-1,-1,-1,3,0,1,0,0,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,-17,0,3,0,0,0,-1,-1,-1,0,0,-3,1,2,0,0,0,1,0,1,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,-2,-4,2,-9,4,-4,-1,5,-3,-8,2,-3,-2,16,-5,1,-5,1,5,6,0,0,-2,0,2,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,2,8,-8,-2,-6,0,2,6,3,-7,2,-2,-3,3,1,6,3,3,0,-1,0,2,-2,0,1,-1,0,0,0,-1,0,0,0,0,0,0,0,0,-1,0,0,0,0,-13,0,0,0,-4,0,-3,-1,3,0,2,0,1,0,2,0,0,0,2,1,0,0,-2,0,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,1,-3,-2,0,-9,-8,0,4,4,-6,3,-2,2,2,-6,1,-5,-1,-3,-1,2,-1,-1,0,0,3,2,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,-2,-5,-1,14,4,4,1,2,-1,1,2,-1,-4,-2,0,0,-4,-3,-4,0,-1,-1,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,-1,0,0,0,0,-1,-1,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,-1,0,0,0,0,0,0,0,0,-1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,-1,0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0,0,-1,-1,0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,1,0,0,1,1,0,0,1,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0,0,1,1,0,1,0,0,1,1,0,0,0,2,0,0,0,1,2,1,0,0,1,1,1,-1,0,0,0,-11,7,3,-3,8,2,18,11,21,12,2,-2,7,-11,0,0,0,0,0,0,0,0,0,0,1,2,1,0,0,0,-6,-25,1,-1,-1,-3,0,-2,0,-2,0,-2,-1,-4,0,0,0,-2,0,0,0,-2,0,-1,0,-4,0,-6,1,4,9,12,-6,-9,-7,-2,-1,-6]; // tuned-params
-  const PV = Int32Array.from(TUNED && TUNED.length === NPAR ? TUNED : PINIT);
+  const PV = Int32Array.from(TUNED && TUNED.length === NPAR ? TUNED : TUNED && TUNED.length < NPAR ? TUNED.concat(PINIT.slice(TUNED.length)) : PINIT);
   if (opts.params) PV.set(opts.params);
   let TR = null;
   const tr = (k, c) => { if (TR) TR[k] += c; };
+  const MOBSLOT = new Int8Array(16).fill(-1); MOBSLOT[L] = 0; MOBSLOT[B] = 1; MOBSLOT[R] = 2; MOBSLOT[PB] = 3; MOBSLOT[PR] = 4;
   function evaluate() {
     let v = 0;
     for (let s = 0; s < 81; s++) {
@@ -363,6 +366,16 @@ function ShogiEngine(opts) {
       const c = p >> 4, t = p & 15, sg = c ? -1 : 1, r = c ? 8 - R_OF[s] : R_OF[s], f = F_OF[s] > 4 ? 8 - F_OF[s] : F_OF[s];
       const k = O.pst + (t - 1) * 45 + r * 5 + f;
       v += sg * (PV[O.mat + t] + PV[k]); tr(O.mat + t, sg); tr(k, sg);
+      if (MOBSLOT[t] >= 0) {
+        const rays = RAYS[c][t][s];
+        let cnt = 0;
+        for (let i = 0; i < rays.length; i++) {
+          const ray = rays[i];
+          for (let j = 0; j < ray.length; j++) { const q = board[ray[j]]; if (!q) cnt++; else { if ((q >> 4) !== c) cnt++; break; } }
+        }
+        const mk = O.mob + MOBSLOT[t];
+        v += sg * cnt * PV[mk]; tr(mk, sg * cnt);
+      }
     }
     for (let c = 0; c < 2; c++) for (let t = 1; t <= 7; t++) {
       const n = hand[c * 8 + t];
@@ -382,6 +395,13 @@ function ShogiEngine(opts) {
         else if (d === 1) esc++;
       }
       v += sg * PV[O.esc + esc]; tr(O.esc + esc, sg);
+      let za = 0;
+      for (let i = 0; i < 8; i++) {
+        const rr = kr + D8[i][0], ff = kf + D8[i][1];
+        if (rr < 0 || rr > 8 || ff < 0 || ff > 8 || board[rr * 9 + ff]) continue;
+        if (attacked(rr * 9 + ff, c ^ 1)) za++;
+      }
+      v += sg * PV[O.kza + za]; tr(O.kza + za, sg);
     }
     if (TR) TR[O.tempo] += side === SENTE ? 1 : -1;
     return (side === SENTE ? v : -v) + PV[O.tempo];

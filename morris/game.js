@@ -5,7 +5,7 @@
 // before the last step cancels.
 import { LINES, VARIANT_LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan, easeSlip } from '../shared/ease.js';
+import { easePlan } from '../shared/ease.js';
 import { morrisFigs } from './figures.js';
 import { reduced } from '../shared/character.js';
 
@@ -69,7 +69,7 @@ export function makeMorris(variant) {
     if (my !== g || !info) return;
     if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500));
     if (my !== g) return;
-    const m = easeSlip('morris', state.legal) ?? (state.legal.includes(info.move) ? info.move : state.legal[0]);
+    const m = state.legal.includes(info.move) ? info.move : state.legal[0];
     commit(m, info);
   }
 

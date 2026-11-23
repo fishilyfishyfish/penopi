@@ -4,7 +4,7 @@
 // can be several lines; Penopi's lines come one after another. My boxes get pencil hatching, Penopi's red pen.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan, easeSlip } from '../shared/ease.js';
+import { easePlan } from '../shared/ease.js';
 import { BOX_FIGS } from './figures.js';
 import { reduced } from '../shared/character.js';
 
@@ -53,7 +53,7 @@ async function engineMove() {
   const pause = moves.length > turnStart.lines ? 300 : 500; // the second and later lines of a turn come quicker
   if (Date.now() - t0 < pause) await new Promise((r) => setTimeout(r, pause - (Date.now() - t0)));
   if (my !== g) return;
-  commit(easeSlip('dots', state.legal) ?? (state.legal.includes(info.move) ? info.move : state.legal[0]), info);
+  commit(state.legal.includes(info.move) ? info.move : state.legal[0], info);
 }
 
 // ---------- moves ----------

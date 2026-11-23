@@ -6,7 +6,7 @@
 // or may not promote asks under the board. "입옥 선언" appears under the board when the declaration rule allows it.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan, easeSlip } from '../shared/ease.js';
+import { easePlan } from '../shared/ease.js';
 import { MOVE_FIGS, PROMO_FIGS } from './figures.js';
 import { hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
@@ -64,7 +64,7 @@ async function engineMove() {
   if (my !== g || !info) return;
   if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500 - (Date.now() - t0)));
   if (my !== g) return;
-  commit(easeSlip('shogi', state.legal.filter((x) => !(x & 65536))) ?? (state.legal.includes(info.move) ? info.move : state.legal[0]), info);
+  commit(state.legal.includes(info.move) ? info.move : state.legal[0], info);
 }
 
 // ---------- moves ----------

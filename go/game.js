@@ -5,7 +5,7 @@
 // crossed out, and the area is counted.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan, easeSlip } from '../shared/ease.js';
+import { easePlan } from '../shared/ease.js';
 import { BREATH_FIGS } from './figures.js';
 import { reduced } from '../shared/character.js';
 
@@ -54,7 +54,6 @@ async function engineMove() {
   if (my !== g) return;
   if (info.resign) { resigned = 3 - human; finish(); return; }
   let m = info.move;
-  if (m !== PASS) { const cand = []; for (let i = 0; i < 81; i++) if (R.legal(i)) cand.push(i); const sl = easeSlip('go', cand); if (sl !== undefined) m = sl; }
   if (m !== PASS && !R.legal(m)) m = PASS;
   commit(m, info);
 }

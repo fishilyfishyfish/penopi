@@ -5,7 +5,7 @@
 // the line of the same name; a game may add its own 'ease:<name>' lines).
 //
 // How the engine looks less (per game, PLANS): a time and depth cap, and now and then a "lapse" (a move from a
-// one-ply look) and a "blunder" (a random legal move). The caps are first guesses
+// one-ply look). The caps are first guesses
 // (the arenas of breakthrough, reversi and chess take the players "ease1:2500" / "ease2:2500", and EASE_PLAN='{...}'
 // overrides the table, to measure them against the full engine); tune them by playing.
 
@@ -21,27 +21,20 @@ export const easeLevel = () => level;
 // [level 1, level 2]: ms = time cap, depth = search depth cap, lapse = chance of a careless move searched only ld plies (default 1).
 // Alpha-beta games cap the depth; the Monte Carlo ones (go, yukgak) only get less time.
 export const PLANS = {
-  breakthrough: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  draughts: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  chess: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  gomoku: [{ ms: 300, depth: 1, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  morris: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  oware: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  reversi: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  dots: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  janggi: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  shogi: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  ttt9: [{ ms: 300, depth: 2, lapse: 0.2, ld: 1, blunder: 0.15 }, { ms: 80, depth: 1, blunder: 0.4 }],
-  go: [{ ms: 200, blunder: 0.1 }, { ms: 40, blunder: 0.3 }],
-  yukgak: [{ ms: 200, blunder: 0.1 }, { ms: 40, blunder: 0.3 }],
+  breakthrough: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  draughts: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  chess: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  gomoku: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  morris: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  oware: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  reversi: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  dots: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  janggi: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  shogi: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  ttt9: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
+  go: [{ ms: 250, lapse: 0 }, { ms: 50, lapse: 0 }],
+  yukgak: [{ ms: 250, lapse: 0 }, { ms: 50, lapse: 0 }],
 };
-
-// A real slip: with chance `blunder`, a random legal move instead of the engine's. Returns it, or undefined to keep the engine's move.
-export function easeSlip(game, list) {
-  const p = level === '0' ? null : (PLANS[game] || PLANS.breakthrough)[Number(level) - 1];
-  if (!p || !p.blunder || !list || list.length < 2 || Math.random() >= p.blunder) return undefined;
-  return list[Math.floor(Math.random() * list.length)];
-}
 
 // What a game's think(time) asks the worker for: { time, depth? }. At full strength, exactly what it asked before.
 export function easePlan(game, ms) {

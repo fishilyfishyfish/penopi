@@ -6,7 +6,7 @@
 import { LINES } from './lines.js';
 import { BOOK, parseLine } from './book.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan, easeSlip } from '../shared/ease.js';
+import { easePlan } from '../shared/ease.js';
 import { SHAPES } from './pieces.js';
 import { MOVE_FIGS, CASTLE_FIGS, EP_FIG } from './figures.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
@@ -113,7 +113,7 @@ async function engineMove() {
   if (my !== g || !info) return;
   if (Date.now() - t0 < 400) await new Promise((r) => setTimeout(r, 400));
   if (my !== g) return;
-  const m = easeSlip('chess', state.legal) ?? (state.legal.includes(info.move) ? info.move : state.legal[0]);
+  const m = state.legal.includes(info.move) ? info.move : state.legal[0];
   commit(m, info);
 }
 

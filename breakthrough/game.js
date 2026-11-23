@@ -3,7 +3,7 @@
 // Board and doodles follow LOA 튀르크: a hand-drawn 8×8 grid, hatched squares, pencil trails, scribbled captures.
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan, easeSlip } from '../shared/ease.js';
+import { easePlan } from '../shared/ease.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -60,7 +60,7 @@ async function engineMove() {
   if (my !== g || !info) return;
   if (Date.now() - t0 < 400) await new Promise((r) => setTimeout(r, 400));
   if (my !== g) return;
-  let m = easeSlip('breakthrough', state.legal) ?? info.move;
+  let m = info.move;
   if (!state.legal.includes(m)) m = state.legal[0];
   commit(m, info);
 }

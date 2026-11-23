@@ -5,7 +5,7 @@
 // move passes by itself (the status line and Penopi say so).
 import { LINES } from './lines.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan, easeSlip } from '../shared/ease.js';
+import { easePlan } from '../shared/ease.js';
 import { FLIP_FIGS } from './figures.js';
 import { gridSvg } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
@@ -60,7 +60,7 @@ async function engineMove() {
   if (my !== g || !info) return;
   if (Date.now() - t0 < 500) await new Promise((r) => setTimeout(r, 500));
   if (my !== g) return;
-  const m = easeSlip('reversi', state.legal.filter((x) => x >= 0)) ?? (state.legal.includes(info.move) ? info.move : state.legal[0]);
+  const m = state.legal.includes(info.move) ? info.move : state.legal[0];
   commit(m, info);
 }
 

@@ -46,7 +46,7 @@ function client() {
 async function think(time) {
   const ez = easePlan('shogi', time); time = ez.time; // 봐주기 (shared/ease.js)
   try {
-    return await client().call({ moves: moves.slice(), time, depth: ez.depth }, { timeout: HARD_LIMIT });
+    return await client().call({ moves: moves.slice(), time, depth: ez.depth, slip: ez.slip }, { timeout: HARD_LIMIT });
   } catch (err) {
     if (/다시 시작/.test(err.message)) return null;
     if (!(err instanceof TimeoutError)) console.warn(err);

@@ -19,7 +19,8 @@ if (process.env.EASE_PLAN) Object.assign(PLANS, JSON.parse(process.env.EASE_PLAN
 function easePlayer(spec) {
   const [lv, cap] = spec.slice(4).split(':');
   const E = ReversiEngine({ ttBits: 18 });
-  return (moves) => { E.setStart(); for (const m of moves) E.play(m); setEase(lv); const ez = easePlan('reversi', Number(cap || 2500)); setEase('0'); return E.think({ time: ez.time, depth: ez.depth }).move; };
+  const { slipThink } = require(path.join(root, 'shared', 'slip.js'));
+  return (moves) => { const replay = () => { E.setStart(); for (const m of moves) E.play(m); }; replay(); setEase(lv); const ez = easePlan('reversi', Number(cap || 2500)); setEase('0'); const cfg = { time: ez.time, depth: ez.depth }; return (ez.slip ? slipThink(E, replay, cfg, ez.slip) : E.think(cfg)).move; };
 }
 function player(spec) {
   if (spec.startsWith('ease')) return easePlayer(spec);

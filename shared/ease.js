@@ -4,8 +4,8 @@
 // A game on 1 or 2 keeps no record (shared/shell.js), and Penopi talks differently (the 'ease:' lines below replace
 // the line of the same name; a game may add its own 'ease:<name>' lines).
 //
-// How the engine looks less (per game, PLANS): a time and depth cap, and now and then a "lapse" (a move from a
-// one-ply look). The caps are first guesses
+// How the engine looks less (per game, PLANS): a time and depth cap, and now and then a "slip" (a plausible
+// 2nd-4th best move, shared/slip.js). The caps are first guesses
 // (the arenas of breakthrough, reversi and chess take the players "ease1:2500" / "ease2:2500", and EASE_PLAN='{...}'
 // overrides the table, to measure them against the full engine); tune them by playing.
 
@@ -18,30 +18,25 @@ let level = '0';
 export const setEase = (l) => { level = String(l || '0'); };
 export const easeLevel = () => level;
 
-// [level 1, level 2]: ms = time cap, depth = search depth cap, lapse = chance of a careless move searched only ld plies (default 1).
+// [level 1, level 2]: ms = time cap, depth = search depth cap, slip = {p, margin}: with chance p the move is not the best one but
+// the 2nd-4th best by a shallow rating (shared/slip.js), never worse than `margin` below the best. A plausible mistake, not a random move.
 // Alpha-beta games cap the depth; the Monte Carlo ones (go, yukgak) only get less time.
+const AB = (margin, d1 = 3) => [{ ms: 300, depth: d1, slip: { p: 0.3, margin } }, { ms: 150, depth: 2, slip: { p: 0.6, margin: margin * 1.5 } }];
 export const PLANS = {
-  breakthrough: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  draughts: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  chess: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  gomoku: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  morris: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  oware: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  reversi: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  dots: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  janggi: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  shogi: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  ttt9: [{ ms: 300, depth: 3, lapse: 0.2, ld: 1 }, { ms: 150, depth: 2, lapse: 0.35, ld: 1 }],
-  go: [{ ms: 250, lapse: 0 }, { ms: 50, lapse: 0 }],
-  yukgak: [{ ms: 250, lapse: 0 }, { ms: 50, lapse: 0 }],
+  breakthrough: AB(150), draughts: AB(150), chess: AB(150, 2), gomoku: AB(2500), morris: AB(150), oware: AB(150),
+  reversi: AB(150), dots: AB(150), janggi: AB(150), shogi: AB(150), ttt9: AB(150),
+  go: [{ ms: 250 }, { ms: 50 }],
+  yukgak: [{ ms: 250 }, { ms: 50 }],
 };
 
-// What a game's think(time) asks the worker for: { time, depth? }. At full strength, exactly what it asked before.
+// What a game's think(time) asks the worker for: { time, depth?, slip? }. At full strength, exactly what it asked before.
 export function easePlan(game, ms) {
   const p = level === '0' ? null : (PLANS[game] || PLANS.breakthrough)[Number(level) - 1];
   if (!p) return { time: ms };
-  if (p.depth && Math.random() < p.lapse) return { time: Math.min(ms, 80), depth: p.ld || 1 };
-  return p.depth ? { time: Math.min(ms, p.ms), depth: p.depth } : { time: Math.min(ms, p.ms) };
+  const o = { time: Math.min(ms, p.ms) };
+  if (p.depth) o.depth = p.depth;
+  if (p.slip && Math.random() < p.slip.p) o.slip = { margin: p.slip.margin };
+  return o;
 }
 
 // 'ease:<name>' lines replace <name> while a game is on 1 or 2 (shared/shell.js). Same placeholders as shared/lines.js.

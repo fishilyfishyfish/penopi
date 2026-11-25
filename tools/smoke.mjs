@@ -15,7 +15,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MOVES = Number(process.argv[2] || 40), SHOTS = process.argv[3] || '';
-const ENGINE_CAP = { ttt9: 9000, backgammon: 9000, oware: 9000, reversi: 9000, dots: 12000, go: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000, janggi: 9000, yukgak: 9000, morris6: 9000, morris12: 9000, shogi: 9000 }; // ms from my move to my next turn, generous for CI
+const ENGINE_CAP = { ttt9: 9000, konane: 9000, surakarta: 9000, hnefatafl: 9000, backgammon: 9000, oware: 9000, reversi: 9000, dots: 12000, go: 9000, gomoku: 9000, morris: 9000, breakthrough: 9000, draughts: 9000, chess: 9000, janggi: 9000, yukgak: 9000, morris6: 9000, morris12: 9000, shogi: 9000 }; // ms from my move to my next turn, generous for CI
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.wasm': 'application/wasm', '.svg': 'image/svg+xml',
   '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -104,6 +104,14 @@ async function boardGame(id, sideIdx) {
       await sq(d.legal[Math.floor(Math.random() * d.legal.length)]).click();
     } else if (id === 'reversi') { // moves: the square 0..63 (a8 = 0), the board's buttons in square order
       await sq(d.legal[Math.floor(Math.random() * d.legal.length)]).click();
+    } else if (id === 'hnefatafl') { // moves: from | to << 7; the squares are the board's only buttons, in square order
+      const m = d.legal[Math.floor(Math.random() * d.legal.length)];
+      await sq(m & 127).click();
+      await sq((m >> 7) & 127).click();
+    } else if (id === 'konane') { // moves: from | to << 6, an opening removal has from === to; d.cells maps a square to its button
+      const m = d.legal[Math.floor(Math.random() * d.legal.length)];
+      await sq(d.cells[m & 63]).click();
+      if ((m & 63) !== ((m >> 6) & 63)) await sq(d.cells[(m >> 6) & 63]).click();
     } else if (id === 'ttt9') { // moves: the cell 0..80 (row*9+col); the 81 cells are the board's only buttons, in cell order
       await sq(d.legal[Math.floor(Math.random() * d.legal.length)]).click();
     } else if (id === 'oware') { // moves: the pit (0–11); the pits are the board's only buttons, in pit order
@@ -140,7 +148,7 @@ async function boardGame(id, sideIdx) {
         if ((await dbg(p)).plies > d.plies) break; // already played (the route was clear)
         await sq(d.cells[l]).click();
       }
-    } else if (id === 'breakthrough') { // moves: from | to << 6; a game with a turned board gives d.cells
+    } else if (id === 'breakthrough' || id === 'surakarta') { // moves: from | to << 6; a game with a turned board gives d.cells
       const m = d.legal[Math.floor(Math.random() * d.legal.length)], cell = (s) => (d.cells ? d.cells[s] : s);
       await sq(cell(m & 63)).click();
       await sq(cell((m >> 6) & 63)).click();
@@ -206,6 +214,12 @@ if (!ONLY || ONLY.includes('morris6')) await boardGame('morris6', 1);
 if (!ONLY || ONLY.includes('morris12')) await boardGame('morris12', 0);
 if (!ONLY || ONLY.includes('oware')) await boardGame('oware', 1);
 if (!ONLY || ONLY.includes('reversi')) await boardGame('reversi', 1);
+if (!ONLY || ONLY.includes('konane')) await boardGame('konane', 1);
+if (!ONLY || ONLY.includes('konane')) await boardGame('konane', 0);
+if (!ONLY || ONLY.includes('surakarta')) await boardGame('surakarta', 1);
+if (!ONLY || ONLY.includes('surakarta')) await boardGame('surakarta', 0);
+if (!ONLY || ONLY.includes('hnefatafl')) await boardGame('hnefatafl', 1);
+if (!ONLY || ONLY.includes('hnefatafl')) await boardGame('hnefatafl', 0);
 if (!ONLY || ONLY.includes('dots')) await boardGame('dots', 1);
 if (!ONLY || ONLY.includes('go')) await boardGame('go', 1);
 if (!ONLY || ONLY.includes('janggi')) await boardGame('janggi', 1);

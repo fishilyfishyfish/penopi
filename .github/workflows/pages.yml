@@ -100,7 +100,7 @@ jobs:
       - name: Test engines (JS)
         run: |
           mkdir -p /tmp/tl && rm -f /tmp/tl/failed
-          printf '%s\n' breakthrough draughts chess gomoku morris oware reversi dots go janggi yukgak shogi ttt9 |
+          printf '%s\n' breakthrough draughts chess gomoku morris oware reversi dots go janggi yukgak shogi ttt9 konane surakarta hnefatafl |
             xargs -P 4 -I{} sh -c 'if node tools/test-{}.mjs > /tmp/tl/{}.log 2>&1; then echo "ok   {}"; else echo "FAIL {}"; echo {} >> /tmp/tl/failed; fi'
           if [ -f /tmp/tl/failed ]; then
             for t in $(cat /tmp/tl/failed); do echo "=== $t ==="; cat /tmp/tl/$t.log; done
@@ -119,6 +119,7 @@ jobs:
           - morris,morris6,morris12,oware,reversi
           - dots,go,janggi
           - shogi,yukgak,ttt9
+          - konane,surakarta,hnefatafl
           - backgammon
     steps:
       - uses: actions/checkout@v4

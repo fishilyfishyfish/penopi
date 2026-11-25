@@ -1,0 +1,29 @@
+/* Hnefatafl: a pen grid on plain paper; corners (red cross) and the throne (ink cross) are marked; attackers are black
+   stones, defenders white, the king a white stone with a crown. */
+.game-hnefatafl .board { height: var(--size); display: grid; }
+.sq { position: relative; border: 0; padding: 0; margin: 0; background: var(--sheet); cursor: pointer; display: grid; place-items: center; touch-action: manipulation; }
+.sq:focus-visible { outline: 3px dashed var(--pen); outline-offset: -5px; z-index: 2; }
+.sq.corner::before, .sq.throne::before { content: ""; position: absolute; inset: 14%; pointer-events: none;
+  background: linear-gradient(45deg, transparent calc(50% - 1.4px), currentColor calc(50% - 1.4px) calc(50% + 1.4px), transparent calc(50% + 1.4px)), linear-gradient(-45deg, transparent calc(50% - 1.4px), currentColor calc(50% - 1.4px) calc(50% + 1.4px), transparent calc(50% + 1.4px)); }
+.sq.corner { color: var(--pen); background: repeating-linear-gradient(-45deg, transparent 0 7px, var(--hatch) 7px 8.5px), var(--sheet); }
+.sq.throne { color: var(--ink); opacity: 1; }
+.sq.throne::before { opacity: .45; }
+.sq.last::after { content: ""; position: absolute; inset: 14% 6%; background: var(--marker); border-radius: 40% 10% 45% 12%; transform: rotate(-4deg); pointer-events: none; }
+.stone { width: 72%; height: 72%; border-radius: 48% 52% 46% 54% / 53% 47% 55% 45%; transform: rotate(var(--k)); pointer-events: none; position: relative; z-index: 1; display: grid; place-items: center; }
+.stone.a { background: var(--ink); box-shadow: inset -3px -4px 0 -2px rgba(255, 255, 255, .12); }
+.stone.d, .stone.k { background: var(--sheet); border: 2.6px solid var(--ink); }
+.stone.k svg { width: 70%; height: 70%; overflow: visible; }
+.stone.k svg path { fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linejoin: round; stroke-linecap: round; }
+.sq.sel .stone { outline: 2.6px solid var(--pen); outline-offset: 2px; }
+.dot { width: 22%; height: 22%; border-radius: 45% 55% 50% 50%; background: var(--pen); pointer-events: none; position: relative; z-index: 2; }
+.trail { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 2; }
+.trail path { fill: none; stroke-linecap: round; stroke-dasharray: 1 1; }
+.trail .line { stroke: rgba(27, 27, 27, .45); stroke-width: 2; stroke-dashoffset: 1; animation: draw .35s ease-out forwards, erase .6s .9s ease-in-out forwards; }
+.trail .smudge { stroke: rgba(27, 27, 27, .07); stroke-width: 9; stroke-dashoffset: 1; animation: draw .6s .9s ease-in-out forwards, smudge .5s 1.4s forwards; }
+.ghost { position: absolute; display: grid; place-items: center; pointer-events: none; z-index: 2; animation: fade .3s .45s forwards; }
+.ghost .stone { transform: none; }
+.ghost svg.x { position: absolute; z-index: 2; inset: 8%; width: 84%; height: 84%; overflow: visible; }
+.ghost svg.x path { fill: none; stroke: var(--pen); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 520; stroke-dashoffset: 520; animation: draw .4s ease-out forwards; }
+.wipe { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+.wipe path { fill: none; stroke: var(--sheet); stroke-width: 200; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: draw .5s ease-in-out forwards; }
+.wipe.done { transition: opacity .25s; opacity: 0; }

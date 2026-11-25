@@ -24,7 +24,7 @@ export const easeLevel = () => level;
 const AB = (margin, d1 = 3) => [{ ms: 300, depth: d1, slip: { p: 0.3, margin } }, { ms: 150, depth: 2, slip: { p: 0.6, margin: margin * 1.5 } }];
 export const PLANS = {
   breakthrough: AB(150), draughts: AB(150), chess: AB(150, 2), gomoku: AB(2500), morris: AB(150), oware: AB(150),
-  reversi: AB(150), dots: AB(150), janggi: AB(150), shogi: AB(150), ttt9: AB(150),
+  reversi: AB(150), konane: AB(40), surakarta: AB(150), hnefatafl: AB(250), dots: AB(150), janggi: AB(150), shogi: AB(150), ttt9: AB(150),
   go: [{ ms: 250 }, { ms: 50 }],
   yukgak: [{ ms: 250 }, { ms: 50 }],
 };

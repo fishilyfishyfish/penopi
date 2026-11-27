@@ -4,7 +4,7 @@
 import { LINES } from './lines.js';
 import { MOVE_FIGS, CAPTURE_FIGS, KING_FIGS } from './figures.js';
 import { workerClient, TimeoutError } from '../shared/engine.js';
-import { easePlan } from '../shared/ease.js';
+import { easePlan, easeLevel } from '../shared/ease.js';
 import { gridSvg, hopPiece, trail, wipe } from '../shared/sketch.js';
 import { reduced } from '../shared/character.js';
 
@@ -33,8 +33,26 @@ function client() {
   if (!engine) engine = workerClient(new URL('./worker.js', import.meta.url), { type: 'classic' });
   return engine;
 }
+// The defenders have the easier game: engine against engine at the same strength the attackers won 29% (7×7) and
+// 16% (11×11, most of the rest draws), and no weight of the evaluation moved that by more than the noise. So when
+// Penopi defends it looks less deep and slips now and then (shared/slip.js), at every 봐주기 level, by the amount that
+// brought engine-vs-engine games back to about even (tools/arena-hnefatafl.mjs; numbers in CLAUDE.md).
+// [size][level]: depth cap, slip chance and margin, shallow = chance of one move less deep. Attacking Penopi uses
+// the full engine (level 0) or PLANS.hnefatafl of shared/ease.js.
+const DEF_PLANS = {
+  7: [{ depth: 4, slip: 0.3, margin: 150 }, { ms: 300, depth: 2, slip: 0.3, margin: 250 }, { ms: 150, depth: 2, shallow: 0.3 }],
+  11: [{ depth: 3, slip: 0.3, margin: 150 }, { ms: 300, depth: 2, slip: 0.3, margin: 250 }, null],
+};
+function plan(time) {
+  const lv = Number(easeLevel()) || 0, p = human === 1 ? (DEF_PLANS[n] || DEF_PLANS[7])[lv] : null;
+  if (!p) return easePlan('hnefatafl', time); // 봐주기 (shared/ease.js): attacking Penopi, or the plan of shared/ease.js
+  const o = { time: p.ms ? Math.min(time, p.ms) : time, depth: p.depth };
+  if (p.shallow && Math.random() < p.shallow) o.depth--;
+  if (p.slip && Math.random() < p.slip) o.slip = { margin: p.margin };
+  return o;
+}
 async function think(time) {
-  const ez = easePlan('hnefatafl', time); time = ez.time; // 봐주기 (shared/ease.js)
+  const ez = plan(time); time = ez.time;
   try {
     return await client().call({ size: n, moves: moves.slice(), time, depth: ez.depth, slip: ez.slip }, { timeout: HARD_LIMIT });
   } catch (err) {
